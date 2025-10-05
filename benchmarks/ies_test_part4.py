@@ -669,7 +669,7 @@ def tenpar_high_phi_test():
     pyemu.os_utils.run("{0} {1}".format(exe_path,"pest_high_phi.pst"),cwd=test_d)
     phi5 = pd.read_csv(os.path.join(test_d, "pest_high_phi.phi.actual.csv"), index_col=0)
     assert os.path.exists(os.path.join(test_d, "pest_high_phi.3.obs.csv"))
-    
+    exit()
 
 
     pst.pestpp_options = {}
@@ -4231,41 +4231,118 @@ def tenpar_reg_factor_test():
 
     if not os.path.exists(template_d):
         raise Exception("template_d {0} not found".format(template_d))
-    pst_name = os.path.join(template_d, "pest.pst")
-    pst = pyemu.Pst(pst_name)
-
-    if os.path.exists(test_d):
-        shutil.rmtree(test_d)
-    shutil.copytree(template_d,test_d)
+    #reg_factors = np.arange(-2.0,-0.01,0.1)
+    reg_factors = [-10.0,-5,-1.0,0.0]
     results = []
-    reg_factors = np.arange(-2.0,-0.01,0.1)
-    reg_factors = [-2,-1,-0.5,0.0]
-    pst.pestpp_options["ies_use_approx"] = False
-    pst.control_data.noptmax = 3
-    for reg_factor in reg_factors:
 
-    
-        pst.pestpp_options["ies_reg_factor"] = -0.5
-        pst_name = "pest.pst"
-        pst.write(os.path.join(test_d,pst_name),version=2)
+    for reg_factor in reg_factors:
+        
+        
+        test_d += str(reg_factor)
+        if os.path.exists(test_d):
+            shutil.rmtree(test_d)
+        shutil.copytree(template_d,test_d)
+        pst_name = os.path.join(test_d, "pest.pst")
+        pst = pyemu.Pst(pst_name)
+        pst.pestpp_options["ies_use_approx"] = False
+        pst.control_data.noptmax = 30
+        pst.control_data.nphinored = 1000
+        pst.observation_data.loc[pst.nnz_obs_names,"weight"] = 10000
+        pst.observation_data.loc[pst.nnz_obs_names,"obsval"] += 2
+        
+        pst.pestpp_options["ies_reg_factor"] = reg_factor
+        pst.write(os.path.join(pst_name),version=2)
         pyemu.os_utils.run("{0} pest.pst".format(exe_path),cwd=test_d)
-        pst = pyemu.Pst(os.path.join(test_d,pst_name))
+        pst = pyemu.Pst(os.path.join(pst_name))
         oe,pe = pst.ies.obsen,pst.ies.paren
         results.append(pst.ies.phiactual)
-    fig,ax = plt.subplots(1,1)
-    colors = ['b','g','r']
-    for c,result in zip(colors,results):
-        itrs = result.iteration.values
-        vals = np.log10(result.iloc[:,6:].values)
-        [ax.plot(itrs,vals[:,i],color=c,alpha=0.5) for i in range(vals.shape[1])]
     
-    plt.show()
+    colors = ['b','m','g','r']
+    from matplotlib.backends.backend_pdf import PdfPages
+    with PdfPages(os.path.join(test_d,"results.pdf")) as pdf:
+        itrs = pst.ies.phiactual.iteration.values
+        for itr in itrs:
+            fig,ax = plt.subplots(1,1)
+            for rf,c,result in zip(reg_factors,colors,results):
+                ptvals = result.iloc[min(int(itr),result.iteration.max()),6:].values
+                ptvals[ptvals<1e-10] = 1e-10
+                ptvals = np.log10(ptvals)
+
+                ptvals = ptvals[~np.isnan(ptvals)]
+                prvals = np.log10(result.iloc[0,6:].values)
+                #[ax.plot(itrs,vals[:,i],color=c,alpha=0.5) for i in range(vals.shape[1])]
+                
+                ax.hist(prvals,bins=20,fc="0.5",alpha=0.1)
+                ax.hist(ptvals,bins=20,fc=c,alpha=0.25,label=rf)
+            ax.legend(loc="upper left")
+            plt.tight_layout()
+            pdf.savefig()
+            plt.close(fig)
+
+
+def freyberg_regfac_invest():
+    import flopy
+    model_d = "ies_freyberg"
+    test_d = os.path.join(model_d, "master_regfac")
+    template_d = os.path.join(model_d, "template")
+    if not os.path.exists(template_d):
+        raise Exception("template_d {0} not found".format(template_d))
+    #reg_factors = np.arange(-2.0,-0.01,0.1)
+    reg_factors = [-10.0,-5,-1.0,0.0]
+    results = []
+
+    for reg_factor in reg_factors:
+        
+        
+        test_d += str(reg_factor)
+        if os.path.exists(test_d):
+            shutil.rmtree(test_d)
+        shutil.copytree(template_d,test_d)
+        pst_name = os.path.join(test_d, "pest.pst")
+        pst = pyemu.Pst(pst_name)
+        pst.pestpp_options["ies_num_reals"] = 50
+        pst.control_data.noptmax = 5
+        pst.control_data.nphinored = 1000
+        pst.observation_data.loc[pst.nnz_obs_names,"weight"] = 10000
+        pst.observation_data.loc[pst.nnz_obs_names,"obsval"] += 2
+        
+        pst.pestpp_options["ies_reg_factor"] = reg_factor
+        pst.write(os.path.join(pst_name),version=2)
+        pyemu.os_utils.run("{0} pest.pst".format(exe_path),cwd=test_d)
+        pst = pyemu.Pst(os.path.join(pst_name))
+        oe,pe = pst.ies.obsen,pst.ies.paren
+        results.append(pst.ies.phiactual)
+    
+    colors = ['b','m','g','r']
+    from matplotlib.backends.backend_pdf import PdfPages
+    with PdfPages(os.path.join(test_d,"results.pdf")) as pdf:
+        itrs = pst.ies.phiactual.iteration.values
+        for itr in itrs:
+            fig,ax = plt.subplots(1,1)
+            for rf,c,result in zip(reg_factors,colors,results):
+                ptvals = result.iloc[min(int(itr),result.iteration.max()),6:].values
+                ptvals[ptvals<1e-10] = 1e-10
+                ptvals = np.log10(ptvals)
+
+                ptvals = ptvals[~np.isnan(ptvals)]
+                prvals = np.log10(result.iloc[0,6:].values)
+                #[ax.plot(itrs,vals[:,i],color=c,alpha=0.5) for i in range(vals.shape[1])]
+                
+                ax.hist(prvals,bins=20,fc="0.5",alpha=0.1)
+                ax.hist(ptvals,bins=20,fc=c,alpha=0.25,label=rf)
+            ax.legend(loc="upper left")
+            plt.tight_layout()
+            pdf.savefig()
+            plt.close(fig)
+
+    
 
 
 
 
 if __name__ == "__main__":
-    tenpar_reg_factor_test()
+    freyberg_regfac_invest()
+    #tenpar_reg_factor_test()
     #tenpar_high_phi_test()
     #tenpar_iqr_bad_phi_sigma_test()
     #multimodal_test()

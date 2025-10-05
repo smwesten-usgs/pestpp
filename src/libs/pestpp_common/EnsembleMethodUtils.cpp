@@ -1435,7 +1435,7 @@ void UpgradeThread::ensemble_solution(const int iter, const int verbose_level,co
                 upgrade_2 = -1.0 * (par_diff * x7);
             }
             //x7.resize(0, 0);
-            if (_reg_factor > 0)
+            if (_reg_factor >= 0)
             {
                 upgrade_1 = upgrade_1 + (_reg_factor * upgrade_2.transpose());
             }
@@ -5066,8 +5066,8 @@ void EnsembleMethod::initialize(int cycle, bool run, bool use_existing)
 
         if (!pest_scenario.get_pestpp_options().get_ies_use_approx())
         {
-            message(1, "WARNING: negative reg_factor passed, implying a full solution, resetting 'ies_use_approx' to true ");
-            pest_scenario.get_pestpp_options_ptr()->set_ies_use_approx(true);
+            message(1, "WARNING: negative reg_factor passed, implying a full solution, resetting 'ies_use_approx' to false ");
+            pest_scenario.get_pestpp_options_ptr()->set_ies_use_approx(false);
         }
     }
 

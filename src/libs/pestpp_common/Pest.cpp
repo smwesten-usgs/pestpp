@@ -642,10 +642,20 @@ int Pest::process_ctl_file(ifstream& fin, string _pst_filename, ofstream& f_rec)
 				}
 
 				//try to use as a regul arg
-				if ((stat == PestppOptions::ARG_STATUS::ARG_NOTFOUND) && (regul_scheme_ptr))
-				{
-					stat = regul_scheme_ptr->assign_value_by_key(kv.first,kv.second);
-					check_report_assignment(f_rec, stat, kv.first, kv.second);
+				if ((stat == PestppOptions::ARG_STATUS::ARG_NOTFOUND)) {
+					if (regul_scheme_ptr) {
+						stat = regul_scheme_ptr->assign_value_by_key(kv.first, kv.second);
+						check_report_assignment(f_rec, stat, kv.first, kv.second);
+
+					}
+					else
+					{
+						DynamicRegularization dr;
+						stat = dr.assign_value_by_key(kv.first, kv.second);
+						check_report_assignment(f_rec, stat, kv.first, kv.second);
+
+
+					}
 				}
 				
 				//ok, found no home for this line
