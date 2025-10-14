@@ -9,27 +9,6 @@ import platform
 import matplotlib.pyplot as plt
 import pyemu
 
-tests = """0) 10par_xsec "standard user mode" - draw reals from par-bounds prior and obs noise from weights
-0a) 10par_xsec same as 0) but with multple lambda 
-1) 10par_xsec start with existing par csv and obs csv - using empirical parcov and obscov
-1a) 10par_xsec start with existing par csv and obs csv - using parcov file
-2) 10par_xsec start with existing par csv and drawing obs en from weights 
-3) 10par_xsec restart with full simulated obs en
-3a) 10par_xsec restart with failed runs in simulated obs en
-3b) 10par_xsec restart with failed runs and bad phi runs in simulated obs en with multiple lam
-4) 10par_xsec reg_factor = 0.5 test
-5)  10par_xsec full solution test with standard draw mode
-5a) 10par_xsec full solution test with empirical parcov
-6) freyberg "standard user mode" - draw reals from par-bounds prior and obs noise from weights
-6a) freyberg same as 0) but with multple lambda 
-7) freyberg draw par en from full parcov supplied in file
-8) freyberg full solution with empirical parcov - supplied par csv, obs csv and restart csv with fails, bad phi,MAP solution, prior scaling, lam mults 
-9) synth restart and upgrade 1.1M par problem"""
-
-ies_vars = ["ies_par_en", "ies_obs_en", "ies_restart_obs_en",
-            "ies_bad_phi", "parcov_filename", "ies_num_reals",
-            "ies_use_approx", "ies_use_prior_scaling", "ies_reg_factor",
-            "ies_lambda_mults", "ies_initial_lambda", "ies_include_base", "ies_subset_size"]
 
 # the old path system before moving to separate benchmarks repo
 # intel = False
@@ -669,7 +648,7 @@ def tenpar_high_phi_test():
     pyemu.os_utils.run("{0} {1}".format(exe_path,"pest_high_phi.pst"),cwd=test_d)
     phi5 = pd.read_csv(os.path.join(test_d, "pest_high_phi.phi.actual.csv"), index_col=0)
     assert os.path.exists(os.path.join(test_d, "pest_high_phi.3.obs.csv"))
-    exit()
+
 
 
     pst.pestpp_options = {}
@@ -4627,13 +4606,14 @@ def freyberg_relaxation_invest():
     
 
 if __name__ == "__main__":
-    tenpar_uniformdist_invest()
-    temp_plot()
+    #tenpar_mean_iter_test_sched()
+    #tenpar_uniformdist_invest()
+    #temp_plot()
     #freyberg_regfac_invest()
     #freyberg_relaxation_invest()
     #tenpar_relaxation_invest()
     #tenpar_reg_factor_test()
-    #tenpar_high_phi_test()
+    tenpar_high_phi_test()
     #tenpar_iqr_bad_phi_sigma_test()
     #multimodal_test()
     #plot_mm1_sweep_results()
