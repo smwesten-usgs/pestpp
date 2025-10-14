@@ -4635,7 +4635,7 @@ def tenpar_reinflate_num_reals_invest():
     pst.control_data.noptmax = noptmax
     pst.pestpp_options["ies_num_reals"] = num_reals
     #pst.pestpp_options["ies_multimodal_alpha"] = 0.99
-    pst.pestpp_options["ies_n_iter_reinflate"] = [2,999]
+    pst.pestpp_options["ies_n_iter_reinflate"] = [8,999]
     pst.pestpp_options["ies_reinflate_num_reals"] = [10,50]
     pst.pestpp_options["ies_use_approx"] = False
     #pst.pestpp_options["ies_use_mda"] = True
