@@ -5398,10 +5398,7 @@ void EnsembleMethod::initialize(int cycle, bool run, bool use_existing)
 	}
 	message(1, "saved obs+noise observation ensemble (obsval + noise realizations) to ", ss.str());
 
-
     ss.str("");
-
-
 
 	if (subset_size > pe.shape().first)
 	{
@@ -5624,7 +5621,7 @@ void EnsembleMethod::initialize(int cycle, bool run, bool use_existing)
 	{
 		ss.str("");
 		ss << "'ies_reinflate_num_reals[0] < current ensemble size, truncating ensemble to " << reinflate_num_reals << " realizations";
-		message(0,ss.str());
+		message(1,ss.str());
 		vector<string> tpar,tobs;
 		vector<string> pebase_real_names = pe.get_real_names();
 		vector<string> oebase_real_names = oe.get_real_names();
