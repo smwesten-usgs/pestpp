@@ -7688,33 +7688,33 @@ void EnsembleMethod::reset_par_ensemble_to_prior_mean(double reinflate_factor,in
     message(1,"reinflation factor:",reinflate_factor);
     performance_log->log_event("getting prior parameter ensemble mean-centered anomalies");
     real_names = pe_base.get_real_names();
-//    if ((reinflate_num_reals > 0) && (reinflate_num_reals < pe_base.shape().first))
-//    {
-//        vector<string> t;
-//        bool has_base = false;
-//        for (auto& n : real_names)
-//        {
-//            if (n == BASE_REAL_NAME)
-//            {
-//                has_base = true;
-//                break;
-//            }
-//        }
-//        bool found_base = false;
-//        for (int i=0;i<reinflate_num_reals;i++)
-//        {
-//            t.push_back(real_names[i]);
-//            if (real_names[i] == BASE_REAL_NAME)
-//            {
-//                found_base = true;
-//            }
-//        }
-//        if ((has_base) && (!found_base))
-//        {
-//            real_names[real_names.size() -1] = BASE_REAL_NAME;
-//        }
-//
-//    }
+    if ((reinflate_num_reals > 0) && (reinflate_num_reals < pe_base.shape().first))
+    {
+        vector<string> t;
+        bool has_base = false;
+        for (auto& n : real_names)
+        {
+            if (n == BASE_REAL_NAME)
+            {
+                has_base = true;
+                break;
+            }
+        }
+        bool found_base = false;
+        for (int i=0;i<reinflate_num_reals;i++)
+        {
+            t.push_back(real_names[i]);
+            if (real_names[i] == BASE_REAL_NAME)
+            {
+                found_base = true;
+            }
+        }
+        if ((has_base) && (!found_base))
+        {
+            real_names[real_names.size() -1] = BASE_REAL_NAME;
+        }
+
+    }
 
     Eigen::MatrixXd anoms = pe_base.get_eigen_anomalies(real_names, pe.get_var_names(), pest_scenario.get_pestpp_options().get_ies_center_on());
     anoms = anoms * reinflate_factor;
