@@ -4612,7 +4612,7 @@ def tenpar_reinflate_num_reals_invest():
         raise Exception("template_d {0} not found".format(template_d))
 
 
-    num_reals = 10
+    num_reals = 50
     std = 0.25
     noptmax = 10
     dialate_factor = 1.25
@@ -4635,8 +4635,8 @@ def tenpar_reinflate_num_reals_invest():
     pst.control_data.noptmax = noptmax
     pst.pestpp_options["ies_num_reals"] = num_reals
     #pst.pestpp_options["ies_multimodal_alpha"] = 0.99
-    pst.pestpp_options["ies_n_iter_reinflate"] = [1,1,999]
-    pst.pestpp_options["ies_reinflate_num_reals"] = [5,10,50]
+    pst.pestpp_options["ies_n_iter_reinflate"] = [2,999]
+    pst.pestpp_options["ies_reinflate_num_reals"] = [10,50]
     pst.pestpp_options["ies_use_approx"] = False
     #pst.pestpp_options["ies_use_mda"] = True
     pst.observation_data["obgnme"] = pst.obs_names

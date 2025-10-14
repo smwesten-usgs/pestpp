@@ -5619,6 +5619,47 @@ void EnsembleMethod::initialize(int cycle, bool run, bool use_existing)
         return;
     }
 
+	int reinflate_num_reals = pest_scenario.get_pestpp_options().get_ies_reinflate_num_reals()[0];
+	if ((reinflate_num_reals > 0) && (reinflate_num_reals < pe_base.shape().first))
+	{
+		ss.str("");
+		ss << "'ies_reinflate_num_reals[0] < current ensemble size, truncating ensemble to " << reinflate_num_reals << " realizations";
+		message(0,ss.str());
+		vector<string> tpar,tobs;
+		vector<string> pebase_real_names = pe.get_real_names();
+		vector<string> oebase_real_names = oe.get_real_names();
+		bool has_base = false;
+		for (auto& n : pe.get_real_names())
+		{
+			if (n == BASE_REAL_NAME)
+			{
+				has_base = true;
+				break;
+			}
+		}
+		bool found_base = false;
+		for (int i=0;i<reinflate_num_reals;i++)
+		{
+			tpar.push_back(pebase_real_names[i]);
+			tobs.push_back(oebase_real_names[i]);
+			if (pebase_real_names[i] == BASE_REAL_NAME)
+			{
+				found_base = true;
+			}
+		}
+		pebase_real_names = tpar;
+		oebase_real_names = tobs;
+		if ((has_base) && (!found_base))
+		{
+			pebase_real_names[pebase_real_names.size() -1] = BASE_REAL_NAME;
+			oebase_real_names[oebase_real_names.size() -1] = BASE_REAL_NAME;
+		}
+		pe.keep_rows(pebase_real_names);
+		oe.keep_rows(oebase_real_names);
+
+	}
+
+
 
     //ok, now run the prior ensemble - after checking for center_on
 	//in case something is wrong with center_on
@@ -5751,8 +5792,7 @@ void EnsembleMethod::initialize(int cycle, bool run, bool use_existing)
         message(1,ss.str());
     }
 
-
-    ph.update(oe, pe, weights);
+	ph.update(oe, pe, weights);
 	message(0, "pre-drop initial phi summary");
 	ph.report(true);
 	
@@ -6006,6 +6046,8 @@ void EnsembleMethod::initialize(int cycle, bool run, bool use_existing)
     if (act_obs_names.size() > 0) {
         message(1, "current lambda:", last_best_lam);
     }
+
+
     message(0, "initialization complete");
 }
 
@@ -7694,7 +7736,7 @@ void EnsembleMethod::reset_par_ensemble_to_prior_mean(double reinflate_factor,in
     {
         vector<string> tpar,tobs;
         bool has_base = false;
-        for (auto& n : real_names)
+        for (auto& n : pebase_real_names)
         {
             if (n == BASE_REAL_NAME)
             {
@@ -7707,7 +7749,7 @@ void EnsembleMethod::reset_par_ensemble_to_prior_mean(double reinflate_factor,in
         {
             tpar.push_back(pebase_real_names[i]);
         	tobs.push_back(oebase_real_names[i]);
-            if (real_names[i] == BASE_REAL_NAME)
+            if (pebase_real_names[i] == BASE_REAL_NAME)
             {
                 found_base = true;
             }
