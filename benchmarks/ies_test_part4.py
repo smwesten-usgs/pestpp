@@ -1200,7 +1200,6 @@ def multimodal_test():
     pst.observation_data.loc["obs1", "weight"] = 100.0
     pst.observation_data.loc[:,"obgnme"] = pst.observation_data.obsnme.values
  
-
     pst.control_data.noptmax = 0
     pst.write(os.path.join(test_d, "mm1.pst"))
     pyemu.os_utils.run("{0} mm1.pst".format(exe_path), cwd=test_d)
@@ -3949,13 +3948,12 @@ def tenpar_uniformdist_invest():
     pst = pyemu.Pst(os.path.join(template_d,pst_name))
     #pst.pestpp_options["ies_n_iter_mean"] = [-1,-3,5,999]
     #pst.pestpp_options["ies_reinflate_factor"] = [1.0,0.9,0.8,0.7]
-    
+        
     #pst.pestpp_options["ies_initial_lambda"] = -100
-    pst.control_data.noptmax = 10
-    pst.pestpp_options["ies_num_reals"] = 500
+    pst.pestpp_options["ies_num_reals"] = 200
     pst.pestpp_options["ies_bad_phi_sigma"] = 1.5
+    pst.pestpp_options["ies_use_approx"] = False
     
-    pst.pestpp_options["ies_no_noise"] = False
     
     par = pst.parameter_data
     par.loc[:,"partrans"] = "none"
@@ -3970,11 +3968,20 @@ def tenpar_uniformdist_invest():
 
     onames = pst.obs_names
     obs = pst.observation_data
-    obs.loc[:,"weight"] = 1.0
+    std = 0.25
+    obs.loc[:,"weight"] = 1.0/std
+    draws = np.random.normal(0.0,std,pst.pestpp_options["ies_num_reals"])
+    vals = pst.observation_data.loc[pst.nnz_obs_names,"obsval"].values
+    obsnoise = np.array([vals for _ in range(pst.pestpp_options["ies_num_reals"])])
+    for i, d in enumerate(draws):
+        obsnoise[i,:] += d
+    noise = pd.DataFrame(obsnoise,columns=pst.nnz_obs_names)
+    noise.to_csv(os.path.join(test_d,"noise.csv"))
+    pst.pestpp_options["ies_obs_en"] = "noise.csv"
     
 
     pst.pestpp_options["ies_verbose_level"] = 2
-    pst.control_data.noptmax = 8
+    pst.control_data.noptmax = 20
     
     pst.write(os.path.join(test_d,pst_name),version=2)
     pyemu.os_utils.run("{0} pest.pst".format(exe_path),cwd=test_d)
@@ -3984,21 +3991,10 @@ def tenpar_uniformdist_invest():
         shutil.rmtree(test_d2)
     shutil.copytree(test_d,test_d2)
 
-    pst.pestpp_options["ies_n_iter_reinflate"] = [-1,-2,999]
-    pst.pestpp_options["ies_multimodal_alpha"] = 0.1
+    pst.pestpp_options["ies_n_iter_reinflate"] = [-2,-2,-2,-2,999]
+    pst.pestpp_options["ies_multimodal_alpha"] = 0.99
     pst.write(os.path.join(test_d2,pst_name),version=2)
     pyemu.os_utils.run("{0} pest.pst".format(exe_path),cwd=test_d2)
-
-    pst.pestpp_options = {"ies_num_reals":pst.pestpp_options["ies_num_reals"],
-                          "ies_par_en":"uni_prior.csv"}
-
-    pst.pestpp_options["ies_use_mda"] = True
-    test_d3 = test_d +"_mda"
-    if os.path.exists(test_d3):
-        shutil.rmtree(test_d3)
-    shutil.copytree(test_d,test_d3)
-    pst.write(os.path.join(test_d3,pst_name),version=2)
-    pyemu.os_utils.run("{0} pest.pst".format(exe_path),cwd=test_d3)
 
 
 
@@ -4010,7 +4006,7 @@ def temp_plot():
     test_d3 = test_d +"_mda"
 
 
-    m_ds = [test_d,test_d2,test_d3]
+    m_ds = [test_d,test_d2]
     phidfs = []
     pardfs = []
     for m_d in m_ds:
@@ -4283,33 +4279,37 @@ def tenpar_reg_factor_test():
 def freyberg_regfac_invest():
     import flopy
     model_d = "ies_freyberg"
-    test_d = os.path.join(model_d, "master_regfac")
     template_d = os.path.join(model_d, "template")
     if not os.path.exists(template_d):
         raise Exception("template_d {0} not found".format(template_d))
     #reg_factors = np.arange(-2.0,-0.01,0.1)
-    reg_factors = [-10.0,-5,-1.0,0.0]
+    reg_factors = [-10.0,-1.0,0.5,0.0]
     results = []
-
+    port = 4269
     for reg_factor in reg_factors:
         
         
-        test_d += str(reg_factor)
+        test_d = template_d+str(reg_factor)
         if os.path.exists(test_d):
             shutil.rmtree(test_d)
         shutil.copytree(template_d,test_d)
         pst_name = os.path.join(test_d, "pest.pst")
         pst = pyemu.Pst(pst_name)
         pst.pestpp_options["ies_num_reals"] = 50
-        pst.control_data.noptmax = 5
+        pst.control_data.noptmax = 3
         pst.control_data.nphinored = 1000
         pst.observation_data.loc[pst.nnz_obs_names,"weight"] = 10000
         pst.observation_data.loc[pst.nnz_obs_names,"obsval"] += 2
         
         pst.pestpp_options["ies_reg_factor"] = reg_factor
         pst.write(os.path.join(pst_name),version=2)
-        pyemu.os_utils.run("{0} pest.pst".format(exe_path),cwd=test_d)
-        pst = pyemu.Pst(os.path.join(pst_name))
+        m_d = test_d.replace("template","master")
+        #pyemu.os_utils.run("{0} pest.pst".format(exe_path),cwd=test_d)
+        pyemu.os_utils.start_workers(test_d, exe_path, "pest.pst", num_workers=20, master_dir=m_d,
+                                worker_root=model_d, port=port)
+
+
+        pst = pyemu.Pst(os.path.join(m_d,"pest.pst"))
         oe,pe = pst.ies.obsen,pst.ies.paren
         results.append(pst.ies.phiactual)
     
@@ -4336,12 +4336,302 @@ def freyberg_regfac_invest():
             plt.close(fig)
 
     
+def tenpar_relaxation_invest():
+    model_d = "ies_10par_xsec"
+    test_d = os.path.join(model_d, "master_base")
+    template_d = os.path.join(model_d, "test_template")
+
+    if not os.path.exists(template_d):
+        raise Exception("template_d {0} not found".format(template_d))
+
+
+    num_reals = 100
+    std = 0.25
+    noptmax = 10
+    dialate_factor = 1.25
+    par_sigma_range = 6
+    obs_bias = 0.0
+
+
+    if os.path.exists(test_d):
+        shutil.rmtree(test_d)
+    shutil.copytree(template_d,test_d)
+    pst_name = os.path.join(test_d, "pest.pst")
+    pst = pyemu.Pst(pst_name)
+    pst.observation_data["weight"] = 1.0
+    pst.observation_data["obsval"] += obs_bias
+    pst.parameter_data["partrans"] = "log"
+    pst.parameter_data["parval1"] = pst.parameter_data["parubnd"]
+    #pst.parameter_data.loc[pst.par_names[::2],"parval1"] = pst.parameter_data.loc[pst.par_names[::2],"parubnd"]
+    pst.parameter_data.loc[pst.par_names,"parval1"] = pst.parameter_data.loc[pst.par_names,"parubnd"]
+    #pst.parameter_data.loc[pst.par_names[1::2],"parval1"] = pst.parameter_data.loc[pst.par_names[1::2],"parlbnd"]
+    pst.control_data.noptmax = noptmax
+    pst.pestpp_options["ies_num_reals"] = num_reals
+    #pst.pestpp_options["ies_multimodal_alpha"] = 0.99
+    #pst.pestpp_options["ies_n_iter_reinflate"] = [4,4,999]
+    pst.pestpp_options["ies_use_approx"] = False
+    #pst.pestpp_options["ies_use_mda"] = True
+    pst.observation_data["obgnme"] = pst.obs_names
+    pst.parameter_data["pargp"] = pst.par_names
+    pst.observation_data.loc[pst.nnz_obs_names,"weight"] = 1./std
+    pst.observation_data["standard_deviation"] = std
+    draws = np.random.normal(0.0,std,num_reals)
+    vals = pst.observation_data.loc[pst.nnz_obs_names,"obsval"].values
+    obsnoise = np.array([vals for _ in range(num_reals)])
+    for i, d in enumerate(draws):
+        obsnoise[i,:] += d
+    noise = pd.DataFrame(obsnoise,columns=pst.nnz_obs_names)
+    noise.to_csv(os.path.join(test_d,"noise.csv"))
+    pst.pestpp_options["ies_obs_en"] = "noise.csv"
+
+    pst.write(os.path.join(pst_name),version=2)
+    pyemu.os_utils.run("{0} pest.pst".format(exe_path),cwd=test_d)
+    pst = pyemu.Pst(os.path.join(pst_name))
+    oe1,pe1 = pst.ies.obsen,pst.ies.paren
+    phi1 = pst.ies.phimeas
+    keep1 = phi1.iloc[-1,6:] <= pst.nnz_obs
+    print(keep1)
+    #exit()
+
+    test_d = test_d.replace("base","dialated")
+    if os.path.exists(test_d):
+        shutil.rmtree(test_d)
+    shutil.copytree(template_d,test_d)
+    pst_name = os.path.join(test_d, "pest.pst")
+    pst = pyemu.Pst(pst_name)
+
+    pst.observation_data["weight"] = 1.0/std
+    pst.observation_data["obsval"] += obs_bias
+    pst.parameter_data["partrans"] = "log"
+    #pst.parameter_data["parval1"] = pst.parameter_data["parubnd"]
+    #pst.parameter_data.loc[pst.par_names[::2],"parval1"] = pst.parameter_data.loc[pst.par_names[::2],"parubnd"]
+    #pst.parameter_data.loc[pst.par_names[1::2],"parval1"] = pst.parameter_data.loc[pst.par_names[1::2],"parlbnd"]
+    pst.parameter_data.loc[pst.par_names,"parval1"] = pst.parameter_data.loc[pst.par_names,"parubnd"]
+    
+    pst.observation_data["standard_deviation"] = std
+    #pst.observation_data.loc[pst.nnz_obs_names,"weight"] = 0
+    pst.add_pars_as_obs(pst_path=test_d,par_sigma_range=par_sigma_range)
+    pst.pestpp_options["ies_use_approx"] = False
+    pst.dialate_par_bounds(dialate_factor)
+    #pst.pestpp_options["ies_multimodal_alpha"] = 0.99
+    pst.pestpp_options["ies_num_reals"] = num_reals
+    pst.pestpp_options["ies_lambda_dec_fac"] = 1.0
+    pst.pestpp_options["ies_n_iter_reinflate"] = [3,999]
+    pst.observation_data["obgnme"] = pst.obs_names
+    pst.parameter_data["pargp"] = pst.par_names
+    pst.control_data.noptmax = noptmax
+    noise.loc[:,pst.par_names] = 1.0
+    noise.to_csv(os.path.join(test_d,"noise.csv"))
+    pst.pestpp_options["ies_obs_en"] = "noise.csv"
+    
+    pst.write(os.path.join(pst_name),version=2)
+    pyemu.os_utils.run("{0} pest.pst".format(exe_path),cwd=test_d)
+    pst = pyemu.Pst(os.path.join(pst_name))
+    oe2,pe2 = pst.ies.obsen,pst.ies.paren
+    phi2 = pst.ies.phimeas
+    keep2 = phi2.iloc[-1,6:] <= pst.nnz_obs
+    print(keep2)
 
 
 
+    from matplotlib.backends.backend_pdf import PdfPages
+    with PdfPages(os.path.join(model_d,"dialate_compare.pdf")) as pdf:
+        fig,ax = plt.subplots(1,1,figsize=(10,5))
+        itrs = phi1.iteration.values
+
+        vals = np.log10(phi1.iloc[:,6:].values)
+        [ax.plot(itrs,vals[:,i],"m") for i in range(vals.shape[1])]
+        ax.plot(itrs,vals[:,0],"m",label="strict enforcement")
+        
+        itrs = phi2.iteration.values
+        vals = np.log10(phi2.iloc[:,6:].values)
+        print(vals)
+        [ax.plot(itrs,vals[:,i],"c") for i in range(vals.shape[1])]
+        ax.plot(itrs,vals[:,0],"c",label="relaxed formulation")
+        ax.grid()
+        ax.legend(loc="upper right")
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close(fig)
+
+        fig,ax = plt.subplots(1,1,figsize=(10,5))
+        ax.hist(np.log10(phi1.iloc[-1,6:].values),bins=15,fc="m",alpha=0.5,density=True,label="strict")
+        ax.hist(np.log10(phi2.iloc[-1,6:].values),bins=15,fc="c",alpha=0.5,density=True,label="relaxed")
+        ax.set_title("final phi")
+        ax.legend(loc="upper right")
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close(fig)
+
+        for pname in pst.par_names:
+            fig,ax = plt.subplots(1,1,figsize=(10,5))
+            ax.hist(pe1.loc[pe1.index.get_level_values(0)==0,pname].values,bins=15,fc="none",hatch="/",ec="m",density=True,label="strict prior")
+            ax.hist(pe1.loc[pe1.index.get_level_values(0)==phi1.iteration.max(),pname].values,bins=15,fc="m",alpha=0.5,density=True,label="strict post")
+            #ax.hist(pe2.loc[pe2.index.get_level_values(0)==0,pname].values,bins=15,fc="0.5",alpha=0.5,density=True)
+            ax.hist(pe2.loc[pe2.index.get_level_values(0)==0,pname].values,bins=15,fc="none",hatch="/",ec="c",density=True,label="relaxed prior")
+            ax.hist(pe2.loc[pe2.index.get_level_values(0)==phi2.iteration.max(),pname].values,bins=15,fc="c",alpha=0.5,density=True,label="relaxed post")
+            lb,ub = pst.observation_data.loc[pname,"greater_than"],pst.observation_data.loc[pname,"less_than"]
+            ylim = ax.get_ylim()
+            ax.plot([lb,lb],ylim,"k--")
+            ax.plot([ub,ub],ylim,"k--")
+            ax.set_ylim(ylim)
+            ax.set_title("parameter: {0}, strict std:{1}, relaxed std: {2}".format(pname,
+                pe1.loc[pe1.index.get_level_values(0)==phi1.iteration.max(),pname].values.std(),
+                pe2.loc[pe2.index.get_level_values(0)==phi2.iteration.max(),pname].values.std()))
+            ax.legend(loc="upper right")
+            plt.tight_layout()
+            pdf.savefig()
+            plt.close(fig)
+        for oname in pst.obs_names:
+            if oname in pst.par_names:
+                continue
+            fig,ax = plt.subplots(1,1,figsize=(10,5))
+            ax.hist(oe1.loc[oe1.index.get_level_values(0)==0,oname].values,bins=15,fc="none",hatch="/",ec="m",density=True,label="strict prior")
+            ax.hist(oe1.loc[oe1.index.get_level_values(0)==phi1.iteration.max(),oname].values,bins=15,fc="m",alpha=0.5,density=True,label="strict post")
+            #ax.hist(pe2.loc[pe2.index.get_level_values(0)==0,pname].values,bins=15,fc="0.5",alpha=0.5,density=True)
+            ax.hist(oe2.loc[oe2.index.get_level_values(0)==0,oname].values,bins=15,fc="none",hatch="/",ec="c",density=True,label="relaxed prior")
+            ax.hist(oe2.loc[oe2.index.get_level_values(0)==phi2.iteration.max(),oname].values,bins=15,fc="c",alpha=0.5,density=True,label="relaxed post")
+            ax.hist(noise.loc[:,oname],bins=15,fc="r",alpha=0.5,density=True,label="obs+noise")
+            oval = pst.observation_data.loc[oname,"obsval"]
+            ylim = ax.get_ylim()
+            ax.plot([oval,oval],ylim,"r--",label="obsval")
+            ax.set_ylim(ylim)
+            ax.set_title("observation: "+oname)
+            ax.legend(loc="upper right")
+            plt.tight_layout()
+            pdf.savefig()
+            plt.close(fig)
+
+
+def freyberg_relaxation_invest():
+    import flopy
+    model_d = "ies_freyberg"
+    template_d = os.path.join(model_d, "template")
+    if not os.path.exists(template_d):
+        raise Exception("template_d {0} not found".format(template_d))
+    #reg_factors = np.arange(-2.0,-0.01,0.1)
+    port = 4269    
+    
+    test_d = template_d+"strict"
+    if os.path.exists(test_d):
+        shutil.rmtree(test_d)
+    shutil.copytree(template_d,test_d)
+    pst_name = os.path.join(test_d, "pest.pst")
+    pst = pyemu.Pst(pst_name)
+    pst.pestpp_options["ies_num_reals"] = 50
+    pst.control_data.noptmax = 10
+    pst.control_data.nphinored = 1000
+    pst.parameter_data["parval1"] = pst.parameter_data["parubnd"]
+     
+    pst.write(os.path.join(pst_name),version=2)
+    m_d = test_d.replace("template","master")
+    pyemu.os_utils.start_workers(test_d, exe_path, "pest.pst", num_workers=20, master_dir=m_d,
+                            worker_root=model_d, port=port)
+
+
+    pst = pyemu.Pst(os.path.join(m_d,"pest.pst"))
+    oe1,pe1 = pst.ies.obsen,pst.ies.paren
+    phi1 = pst.ies.phimeas
+
+
+    test_d = template_d+"relax"
+    if os.path.exists(test_d):
+        shutil.rmtree(test_d)
+    shutil.copytree(template_d,test_d)
+    pst_name = os.path.join(test_d, "pest.pst")
+    pst = pyemu.Pst(pst_name)
+    pst.pestpp_options["ies_num_reals"] = 50
+    pst.control_data.noptmax = 10
+    pst.control_data.nphinored = 1000
+    pst.parameter_data["parval1"] = pst.parameter_data["parubnd"]
+    pst.add_pars_as_obs(pst_path=test_d,par_sigma_range=6)
+    pst.dialate_par_bounds(1.5) 
+    pst.write(os.path.join(pst_name),version=2)
+    m_d = test_d.replace("template","master")
+    pyemu.os_utils.start_workers(test_d, exe_path, "pest.pst", num_workers=20, master_dir=m_d,
+                            worker_root=model_d, port=port)
+    pst = pyemu.Pst(os.path.join(m_d,"pest.pst"))
+    oe2,pe2 = pst.ies.obsen,pst.ies.paren
+    phi2 = pst.ies.phimeas
+
+    from matplotlib.backends.backend_pdf import PdfPages
+    with PdfPages(os.path.join(model_d,"dialate_compare.pdf")) as pdf:
+        fig,ax = plt.subplots(1,1,figsize=(10,5))
+        itrs = phi1.iteration.values
+
+        vals = np.log10(phi1.iloc[:,6:].values)
+        [ax.plot(itrs,vals[:,i],"m") for i in range(vals.shape[1])]
+        ax.plot(itrs,vals[:,0],"m",label="strict enforcement")
+        
+        itrs = phi2.iteration.values
+        vals = np.log10(phi2.iloc[:,6:].values)
+        print(vals)
+        [ax.plot(itrs,vals[:,i],"c") for i in range(vals.shape[1])]
+        ax.plot(itrs,vals[:,0],"c",label="relaxed formulation")
+        ax.grid()
+        ax.legend(loc="upper right")
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close(fig)
+
+        fig,ax = plt.subplots(1,1,figsize=(10,5))
+        ax.hist(np.log10(phi1.iloc[-1,6:].values),bins=15,fc="m",alpha=0.5,density=True,label="strict")
+        ax.hist(np.log10(phi2.iloc[-1,6:].values),bins=15,fc="c",alpha=0.5,density=True,label="relaxed")
+        ax.set_title("final phi")
+        ax.legend(loc="upper right")
+        plt.tight_layout()
+        pdf.savefig()
+        plt.close(fig)
+
+        # for pname in pst.par_names:
+        #     fig,ax = plt.subplots(1,1,figsize=(10,5))
+        #     ax.hist(pe1.loc[pe1.index.get_level_values(0)==0,pname].values,bins=15,fc="none",hatch="/",ec="m",density=True,label="strict prior")
+        #     ax.hist(pe1.loc[pe1.index.get_level_values(0)==phi1.iteration.max(),pname].values,bins=15,fc="m",alpha=0.5,density=True,label="strict post")
+        #     #ax.hist(pe2.loc[pe2.index.get_level_values(0)==0,pname].values,bins=15,fc="0.5",alpha=0.5,density=True)
+        #     ax.hist(pe2.loc[pe2.index.get_level_values(0)==0,pname].values,bins=15,fc="none",hatch="/",ec="c",density=True,label="relaxed prior")
+        #     ax.hist(pe2.loc[pe2.index.get_level_values(0)==phi2.iteration.max(),pname].values,bins=15,fc="c",alpha=0.5,density=True,label="relaxed post")
+        #     lb,ub = pst.observation_data.loc[pname,"greater_than"],pst.observation_data.loc[pname,"less_than"]
+        #     ylim = ax.get_ylim()
+        #     ax.plot([lb,lb],ylim,"k--")
+        #     ax.plot([ub,ub],ylim,"k--")
+        #     ax.set_ylim(ylim)
+        #     ax.set_title("parameter: {0}, strict std:{1}, relaxed std: {2}".format(pname,
+        #         pe1.loc[pe1.index.get_level_values(0)==phi1.iteration.max(),pname].values.std(),
+        #         pe2.loc[pe2.index.get_level_values(0)==phi2.iteration.max(),pname].values.std()))
+        #     ax.legend(loc="upper right")
+        #     plt.tight_layout()
+        #     pdf.savefig()
+        #     plt.close(fig)
+        for oname in pst.nnz_obs_names:
+            if oname in pst.par_names:
+                continue
+            fig,ax = plt.subplots(1,1,figsize=(10,5))
+            ax.hist(oe1.loc[oe1.index.get_level_values(0)==0,oname].values,bins=15,fc="none",hatch="/",ec="m",density=True,label="strict prior")
+            ax.hist(oe1.loc[oe1.index.get_level_values(0)==phi1.iteration.max(),oname].values,bins=15,fc="m",alpha=0.5,density=True,label="strict post")
+            #ax.hist(pe2.loc[pe2.index.get_level_values(0)==0,pname].values,bins=15,fc="0.5",alpha=0.5,density=True)
+            ax.hist(oe2.loc[oe2.index.get_level_values(0)==0,oname].values,bins=15,fc="none",hatch="/",ec="c",density=True,label="relaxed prior")
+            ax.hist(oe2.loc[oe2.index.get_level_values(0)==phi2.iteration.max(),oname].values,bins=15,fc="c",alpha=0.5,density=True,label="relaxed post")
+            #ax.hist(noise.loc[:,oname],bins=15,fc="r",alpha=0.5,density=True,label="obs+noise")
+            oval = pst.observation_data.loc[oname,"obsval"]
+            ylim = ax.get_ylim()
+            ax.plot([oval,oval],ylim,"r--",label="obsval")
+            ax.set_ylim(ylim)
+            ax.set_title("observation: "+oname)
+            ax.legend(loc="upper right")
+            plt.tight_layout()
+            pdf.savefig()
+            plt.close(fig)
+
+    
+
+    
 
 if __name__ == "__main__":
-    freyberg_regfac_invest()
+    tenpar_uniformdist_invest()
+    temp_plot()
+    #freyberg_regfac_invest()
+    #freyberg_relaxation_invest()
+    #tenpar_relaxation_invest()
     #tenpar_reg_factor_test()
     #tenpar_high_phi_test()
     #tenpar_iqr_bad_phi_sigma_test()

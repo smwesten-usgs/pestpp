@@ -7660,7 +7660,7 @@ bool EnsembleMethod::solve(bool use_mda, vector<double> inflation_factors, vecto
 	return true;
 }
 
-void EnsembleMethod::reset_par_ensemble_to_prior_mean(double reinflate_factor){
+void EnsembleMethod::reset_par_ensemble_to_prior_mean(double reinflate_factor,int reinflate_num_reals){
 
     string min_phi_name = "";
     //find the min phi real...
@@ -7687,7 +7687,36 @@ void EnsembleMethod::reset_par_ensemble_to_prior_mean(double reinflate_factor){
     message(0,"resetting current parameter ensemble to prior ensemble with current ensemble mean");
     message(1,"reinflation factor:",reinflate_factor);
     performance_log->log_event("getting prior parameter ensemble mean-centered anomalies");
-    Eigen::MatrixXd anoms = pe_base.get_eigen_anomalies(pe_base.get_real_names(), pe.get_var_names(), pest_scenario.get_pestpp_options().get_ies_center_on());
+    real_names = pe_base.get_real_names();
+    if ((reinflate_num_reals > 0) && (reinflate_num_reals < pe_base.shape().first))
+    {
+        vector<string> t;
+        bool has_base = false;
+        for (auto& n : real_names)
+        {
+            if (n == BASE_REAL_NAME)
+            {
+                has_base = true;
+                break;
+            }
+        }
+        bool found_base = false;
+        for (int i=0;i<reinflate_num_reals;i++)
+        {
+            t.push_back(real_names[i]);
+            if (real_names[i] == BASE_REAL_NAME)
+            {
+                found_base = true;
+            }
+        }
+        if ((has_base) && (!found_base))
+        {
+            real_names[real_names.size() -1] = BASE_REAL_NAME;
+        }
+
+    }
+
+    Eigen::MatrixXd anoms = pe_base.get_eigen_anomalies(real_names, pe.get_var_names(), pest_scenario.get_pestpp_options().get_ies_center_on());
     anoms = anoms * reinflate_factor;
     performance_log->log_event("getting current parameter ensemble mean vector");
     vector<double> mean_vec = pe.get_mean_stl_var_vector();
@@ -8781,7 +8810,7 @@ void EnsembleMethod::initialize_restart()
 	}
 	else if (oe.shape().first > oe_base.shape().first) //something is wrong
 	{
-		ss << "restart oe has too many rows: " << oe.shape().first << " compared to oe_base: " << oe_base.shape().first;
+		ss << "oe read from file has too many rows: " << oe.shape().first << " compared to obs+noise oe: " << oe_base.shape().first;
 		throw_em_error(ss.str());
 	}
 

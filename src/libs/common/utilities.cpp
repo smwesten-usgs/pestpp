@@ -115,7 +115,7 @@ template void tokenize(const std::string& str, list<string>& tokens, const std::
 
 bool invalidChar (char c)
 {
-	return !(c>=0 && c <128);
+	return !(c>=0 && (unsigned char)c<128);
 }
 
 void strip_nonascii_ip(string &s) {

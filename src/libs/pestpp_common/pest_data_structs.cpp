@@ -1228,6 +1228,17 @@ bool PestppOptions::assign_ies_value_by_key(const string& key, const string& val
         return true;
 
     }
+	else if (key == "IES_REINFLATE_NUM_REALS")
+	{
+		ies_reinflate_num_reals.clear();
+		vector<string> tok;
+		tokenize(value, tok, ",");
+		for (const auto& fac : tok)
+		{
+			ies_reinflate_num_reals.push_back(convert_cp<int>(fac));
+		}
+		return true;
+	}
 
 
 
@@ -2028,6 +2039,10 @@ void PestppOptions::summary(ostream& os) const
         os << v << ",";
     os << endl;
     os << "ies_run_realname: " << ies_run_realname;
+	os << "ies_reinflate_num_reals: " << endl;
+	for (auto v : ies_reinflate_num_reals)
+		os << v << ",";
+	os << endl;
 
     os << endl << "pestpp-sen options: " << endl;
 	os << "gsa_method: " << gsa_method << endl;
@@ -2229,6 +2244,7 @@ void PestppOptions::set_defaults()
     set_ies_n_iter_reinflate(vector < int > {0});
     set_ies_reinflate_factor(vector < double > {1.0});
     set_ies_run_realname("");
+	set_ies_reinflate_num_reals(vector<int>{0});
 
     set_ies_updatebyreals(false);
     set_save_dense(false);
