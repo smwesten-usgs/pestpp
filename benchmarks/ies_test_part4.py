@@ -4612,7 +4612,8 @@ def freyberg_reinflate_num_reals_invest():
 
 if __name__ == "__main__":
     #freyberg_pdc_test()
-    tenpar_reinflate_num_reals_invest()
+    tenpar_mean_iter_test()
+    #tenpar_reinflate_num_reals_invest()
     #tenpar_mean_iter_test_sched()
     #tenpar_uniformdist_invest()
     #temp_plot()

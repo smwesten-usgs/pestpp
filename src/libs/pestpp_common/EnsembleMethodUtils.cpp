@@ -5681,9 +5681,6 @@ void EnsembleMethod::initialize(int cycle, bool run, bool use_existing)
 			pe.to_csv(ss.str());
 		}
 		message(1, "saved initial truncated parameter ensemble to ", ss.str());
-
-
-
 	}
 
 
