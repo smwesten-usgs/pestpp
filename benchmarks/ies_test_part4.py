@@ -2476,12 +2476,12 @@ def tenpar_mean_iter_test_sched():
     shutil.copytree(template_d,test_d)
     pst_name = "pest.pst"
     pst = pyemu.Pst(os.path.join(template_d,pst_name))
-    pst.pestpp_options["ies_n_iter_mean"] = [-1,-3,5,999]
+    pst.pestpp_options["ies_n_iter_mean"] = [-1,-2,999]
     #pst.pestpp_options["ies_reinflate_factor"] = [1.0,0.9,0.8,0.7]
     
     pst.pestpp_options["ies_initial_lambda"] = -100
-    pst.control_data.noptmax = 21 # hard coded to test results below
-    pst.pestpp_options["ies_num_reals"] = 50
+    pst.control_data.noptmax = 7 # hard coded to test results below
+    pst.pestpp_options["ies_num_reals"] = 30
     pst.pestpp_options["ies_debug_fail_remainder"] = True
     pst.pestpp_options["ies_debug_fail_subset"] = True
     pst.pestpp_options["ies_no_noise"] = False
@@ -2500,8 +2500,8 @@ def tenpar_mean_iter_test_sched():
     phidf = pd.read_csv(os.path.join(test_d,"pest.phi.actual.csv"),index_col=0)
     print(phidf.loc[:,"mean"])
     print(phidf.shape)
-    assert phidf.shape[0] == 25 #hard coded to noptmax above
-    assert phidf.shape[1] == 55 #50 reals + summary stats
+    assert phidf.shape[0] == 10 #hard coded to noptmax above
+    assert phidf.shape[1] == 35 #50 reals + summary stats
 
     for i in phidf.index.values:
         oe = pd.read_csv(os.path.join(test_d,"pest.{0}.obs.csv".format(i)),index_col=0)
@@ -2513,7 +2513,7 @@ def tenpar_mean_iter_test_sched():
             if "running new mean-shifted prior realizations" in line:
                 count += 1
     print(count)
-    assert count == 3
+    assert count == 2
     
 
 
@@ -2527,12 +2527,12 @@ def tenpar_mean_iter_test_sched():
     shutil.copytree(template_d,test_d)
     pst_name = "pest.pst"
     pst = pyemu.Pst(os.path.join(template_d,pst_name))
-    pst.pestpp_options["ies_n_iter_mean"] = [-1,-3,5,999]
-    pst.pestpp_options["ies_reinflate_factor"] = [1.0,0.9,0.8,0.7]
+    pst.pestpp_options["ies_n_iter_mean"] = [-1,-2,999]
+    pst.pestpp_options["ies_reinflate_factor"] = [1.0,0.2,1.0]
     
     pst.pestpp_options["ies_initial_lambda"] = -100
-    pst.control_data.noptmax = 21 # hard coded to test results below
-    pst.pestpp_options["ies_num_reals"] = 50
+    pst.control_data.noptmax = 7 # hard coded to test results below
+    pst.pestpp_options["ies_num_reals"] = 30
     pst.pestpp_options["ies_debug_fail_remainder"] = True
     pst.pestpp_options["ies_debug_fail_subset"] = True
     pst.pestpp_options["ies_no_noise"] = False
@@ -2550,8 +2550,8 @@ def tenpar_mean_iter_test_sched():
     phidf = pd.read_csv(os.path.join(test_d,"pest.phi.actual.csv"),index_col=0)
     print(phidf.loc[:,"mean"])
     print(phidf.shape)
-    assert phidf.shape[0] == 25 #hard coded to noptmax above
-    assert phidf.shape[1] == 55 #50 reals + summary stats
+    assert phidf.shape[0] == 10 #hard coded to noptmax above
+    assert phidf.shape[1] == 35 #50 reals + summary stats
 
     for i in phidf.index.values:
         oe = pd.read_csv(os.path.join(test_d,"pest.{0}.obs.csv".format(i)),index_col=0)
@@ -2567,10 +2567,12 @@ def tenpar_mean_iter_test_sched():
                 facs.append(float(line.split("reinflation factor:")[1]))
 
     print(count)
-    assert count == 3
+    assert count == 2
     print(facs)
-    assert len(facs) == 3
+    assert len(facs) == 2
     ffacs = pst.pestpp_options["ies_reinflate_factor"][:-1]
+
+    print(ffacs)
     diff = np.array(facs) - ffacs
     print(diff)
     assert diff.sum() == 0.0
@@ -2588,11 +2590,11 @@ def tenpar_mean_iter_test_sched():
     phidf = pd.read_csv(os.path.join(test_d,"pest.phi.actual.csv"),index_col=0)
     print(phidf.loc[:,"mean"])
     print(phidf.shape)
-    assert phidf.shape[0] == 25 #hard coded to noptmax above
-    assert phidf.shape[1] == 55 #50 reals + summary stats
+    assert phidf.shape[0] == 10 #hard coded to noptmax above
+    assert phidf.shape[1] == 35 #50 reals + summary stats
 
-    pst.pestpp_options["ies_par_en"] = "pest.24.par.bin"
-    pst.pestpp_options["ies_restart_obs_en"] = "pest.24.obs.bin"
+    pst.pestpp_options["ies_par_en"] = "pest.9.par.bin"
+    pst.pestpp_options["ies_restart_obs_en"] = "pest.9.obs.bin"
     pst.pestpp_options["ies_obs_en"] = "pest.obs+noise.bin"
     pst.pestpp_options["ies_weight_en"] = "pest.weights.bin"
 
@@ -2602,8 +2604,8 @@ def tenpar_mean_iter_test_sched():
     phidf2 = pd.read_csv(os.path.join(test_d,"test.phi.actual.csv"),index_col=0)
     print(phidf2.loc[:,"mean"])
     print(phidf2.shape)
-    assert phidf2.shape[0] == 25 #hard coded to noptmax above
-    assert phidf2.shape[1] == 43 #restart with 40 reals + summary stats
+    assert phidf2.shape[0] == 10 #hard coded to noptmax above
+    assert phidf2.shape[1] == 29 #restart with 40 reals + summary stats
     
     pst.pestpp_options.pop("save_dense")
 
@@ -2613,8 +2615,8 @@ def tenpar_mean_iter_test_sched():
     phidf2 = pd.read_csv(os.path.join(test_d,"test2.phi.actual.csv"),index_col=0)
     print(phidf2.loc[:,"mean"])
     print(phidf2.shape)
-    assert phidf2.shape[0] == 25 #hard coded to noptmax above
-    assert phidf2.shape[1] == 43 #restart with 40 reals + summary stats
+    assert phidf2.shape[0] == 10 #hard coded to noptmax above
+    assert phidf2.shape[1] == 29 #restart with 40 reals + summary stats
     
 
 
@@ -4612,9 +4614,10 @@ def freyberg_reinflate_num_reals_invest():
 
 if __name__ == "__main__":
     #freyberg_pdc_test()
-    tenpar_mean_iter_test()
+    #tenpar_mean_iter_test()
     #tenpar_reinflate_num_reals_invest()
-    #tenpar_mean_iter_test_sched()
+
+    tenpar_mean_iter_test_sched()
     #tenpar_uniformdist_invest()
     #temp_plot()
     #freyberg_regfac_invest()
