@@ -2637,11 +2637,11 @@ def tenpar_mean_iter_sched_phifac_test():
     shutil.copytree(template_d,test_d)
     pst_name = "pest.pst"
     pst = pyemu.Pst(os.path.join(template_d,pst_name))
-    pst.pestpp_options["ies_n_iter_mean"] = [-1,-3,5,999]
+    pst.pestpp_options["ies_n_iter_mean"] = [-1,-1,1,999]
     #pst.pestpp_options["ies_reinflate_factor"] = [1.0,0.9,0.8,0.7]
     
     pst.pestpp_options["ies_initial_lambda"] = -100
-    pst.control_data.noptmax = 21 # hard coded to test results below
+    pst.control_data.noptmax = 10 # hard coded to test results below
     pst.pestpp_options["ies_num_reals"] = 50
     pst.pestpp_options["ies_debug_fail_remainder"] = True
     pst.pestpp_options["ies_debug_fail_subset"] = True
@@ -2664,7 +2664,7 @@ def tenpar_mean_iter_sched_phifac_test():
     pst.pestpp_options["ies_phi_factor_file"] = "phi.csv"
     #pst.pestpp_options["debug_parse_only"] = True
     pst.pestpp_options["ies_verbose_level"] = 2
-    pst.control_data.noptmax = 20
+    pst.control_data.noptmax = 10
     
     pst.write(os.path.join(test_d,pst_name),version=2)
     pyemu.os_utils.run("{0} pest.pst".format(exe_path),cwd=test_d)
@@ -2695,7 +2695,7 @@ def tenpar_mean_iter_sched_phifac_test():
     pst.write(os.path.join(test_d,pst_name),version=2)
     pyemu.os_utils.run("{0} pest.pst".format(exe_path),cwd=test_d)
     
-    pst.control_data.noptmax = 21
+    pst.control_data.noptmax = 7
     pst.write(os.path.join(test_d,pst_name),version=2)
     pyemu.os_utils.run("{0} pest.pst".format(exe_path),cwd=test_d)
 
@@ -2713,7 +2713,7 @@ def tenpar_mean_iter_sched_phifac_test():
     phidf = pd.read_csv(os.path.join(test_d,"pest.phi.actual.csv"),index_col=0)
     print(phidf.loc[:,"mean"])
     print(phidf.shape)
-    assert phidf.shape[0] == 25 #hard coded to noptmax above
+    assert phidf.shape[0] == 11 #hard coded to noptmax above
     assert phidf.shape[1] == 55 #50 reals + summary stats
 
     for i in phidf.index.values:
@@ -2739,11 +2739,11 @@ def tenpar_mean_iter_sched_phifac_test():
     shutil.copytree(template_d,test_d)
     pst_name = "pest.pst"
     pst = pyemu.Pst(os.path.join(template_d,pst_name))
-    pst.pestpp_options["ies_n_iter_mean"] = [-1,-3,5,999]
+    pst.pestpp_options["ies_n_iter_mean"] = [-1,-1,1,999]
     pst.pestpp_options["ies_reinflate_factor"] = [1.0,0.9,0.8,0.7]
     
     pst.pestpp_options["ies_initial_lambda"] = -100
-    pst.control_data.noptmax = 21 # hard coded to test results below
+    pst.control_data.noptmax = 7 # hard coded to test results below
     pst.pestpp_options["ies_num_reals"] = 50
     pst.pestpp_options["ies_debug_fail_remainder"] = True
     pst.pestpp_options["ies_debug_fail_subset"] = True
@@ -2779,7 +2779,7 @@ def tenpar_mean_iter_sched_phifac_test():
     phidf = pd.read_csv(os.path.join(test_d,"pest.phi.actual.csv"),index_col=0)
     print(phidf.loc[:,"mean"])
     print(phidf.shape)
-    assert phidf.shape[0] == 25 #hard coded to noptmax above
+    assert phidf.shape[0] == 11 #hard coded to noptmax above
     assert phidf.shape[1] == 55 #50 reals + summary stats
 
     for i in phidf.index.values:
@@ -3770,7 +3770,7 @@ def tenpar_consistency_test():
     pst = pyemu.Pst(os.path.join(template_d,pst_name))
     #pst.pestpp_options["ies_n_iter_mean"] = [-1,-3,5,999]
     #pst.pestpp_options["ies_reinflate_factor"] = [1.0,0.9,0.8,0.7]
-    
+    pst.pestpp_options = {}
     pst.pestpp_options["ies_initial_lambda"] = -100
     pst.control_data.noptmax = 6 # hard coded to test results below
     pst.pestpp_options["ies_num_reals"] = 50
@@ -3825,7 +3825,7 @@ def tenpar_consistency_test():
         m2.loc[:,:] = np.abs(m2.values)
         
         diff = m1 - m2
-        print(diff.sum,diff.max())
+        print(diff.values.sum())
         assert diff.values.sum() == 0.0
 
 def tenpar_uniformdist_invest():
@@ -4592,10 +4592,10 @@ def freyberg_reinflate_num_reals_invest():
     model_d = "ies_freyberg"
     org_template_d = os.path.join(model_d, "test_template")
 
-    noptmax = 6
-    reinflate = [-4,999]
-    num_reals = 200
-    reinflate_num_reals = [10,200]
+    noptmax = 3
+    reinflate = [-2,999]
+    num_reals = 500
+    reinflate_num_reals = [10,500]
 
     cov = pyemu.Cov.from_binary(os.path.join(org_template_d,"prior.jcb"))
     pst = pyemu.Pst(os.path.join(org_template_d,"pest.pst"))
@@ -4630,75 +4630,92 @@ def freyberg_reinflate_num_reals_invest():
                                  worker_root=model_d, port=port)
 
 
-    test_d = os.path.join(model_d, "master_noinflate_gloc")
-    if os.path.exists(test_d):
-        shutil.rmtree(test_d)
-    template_d = org_template_d+"_noreinf_grouploc"
-    if os.path.exists(template_d):
-        shutil.rmtree(template_d)
-    shutil.copytree(org_template_d,template_d)
-    pst = pyemu.Pst(os.path.join(template_d, "pest.pst"))
-    reweight(pst)
-    pst.pestpp_options = {"ies_num_reals": num_reals,"ies_par_en":"prior_pe.jcb"}
-    
-    pgroups,ogroups = pst.adj_par_groups,pst.nnz_obs_groups
-    loc = pd.DataFrame(index=ogroups,columns=pgroups)
-    loc.loc[:,:] = 0.0
-    for pgroup in pgroups:
-        loc.loc[:,pgroup] = 1.0
-    loc.to_csv(os.path.join(template_d,"gloc.csv"))
-    pst.pestpp_options["ies_localizer"] = "gloc.csv"
-    pst.control_data.noptmax = 4
-    pst.write(os.path.join(template_d, "pest.pst"),version=2)
-    pyemu.os_utils.start_workers(template_d, exe_path, "pest.pst", num_workers=10, master_dir=test_d,
-                                 worker_root=model_d, port=port)
+    # test_d = os.path.join(model_d, "master_noinflate_gloc")
+    # if os.path.exists(test_d):
+    #     shutil.rmtree(test_d)
+    # template_d = org_template_d+"_noreinf_grouploc"
+    # if os.path.exists(template_d):
+    #     shutil.rmtree(template_d)
+    # shutil.copytree(org_template_d,template_d)
+    # pst = pyemu.Pst(os.path.join(template_d, "pest.pst"))
+    # reweight(pst)
+    # pst.pestpp_options = {"ies_num_reals": num_reals,"ies_par_en":"prior_pe.jcb"}
+    # pgroups,ogroups = pst.adj_par_groups,pst.nnz_obs_groups
+    # loc = pd.DataFrame(index=ogroups,columns=pgroups)
+    # loc.loc[:,:] = 0.0
+    # for pgroup in pgroups:
+    #     loc.loc[:,pgroup] = 1.0
+    # loc.to_csv(os.path.join(template_d,"gloc.csv"))
+    # pst.pestpp_options["ies_localizer"] = "gloc.csv"
+    # pst.control_data.noptmax = 4
+    # pst.write(os.path.join(template_d, "pest.pst"),version=2)
+    # pyemu.os_utils.start_workers(template_d, exe_path, "pest.pst", num_workers=10, master_dir=test_d,
+    #                              worker_root=model_d, port=port)
 
-    test_d = os.path.join(model_d, "master_reinflate_relaxed")
-    if os.path.exists(test_d):
-        shutil.rmtree(test_d)
-    template_d = org_template_d+"_reinf_relaxed"
-    if os.path.exists(template_d):
-        shutil.rmtree(template_d)
-    shutil.copytree(org_template_d,template_d)
-    pst = pyemu.Pst(os.path.join(template_d, "pest.pst"))
-    reweight(pst)
-    pst.pestpp_options = {"ies_num_reals": num_reals,"ies_par_en":"prior_pe.jcb"}
-    
-    pst.pestpp_options["ies_n_iter_reinflate"] = reinflate
-    pst.pestpp_options["ies_reinflate_num_reals"] = reinflate_num_reals   
-    pst.add_pars_as_obs(par_sigma_range=4,pst_path=template_d)
-    pst.dialate_par_bounds(1.5)
-    pst.control_data.noptmax = noptmax
-    pst.write(os.path.join(template_d, "pest.pst"),version=2)
-    pyemu.os_utils.start_workers(template_d, exe_path, "pest.pst", num_workers=10, master_dir=test_d,
-                                 worker_root=model_d, port=port)
 
-    test_d = os.path.join(model_d, "master_reinflate_relaxed_gloc")
-    if os.path.exists(test_d):
-        shutil.rmtree(test_d)
-    template_d = org_template_d+"_reinf_relaxed"
-    if os.path.exists(template_d):
-        shutil.rmtree(template_d)
-    shutil.copytree(org_template_d,template_d)
-    pst = pyemu.Pst(os.path.join(template_d, "pest.pst"))
-    reweight(pst)
-    pst.pestpp_options = {"ies_num_reals": num_reals,"ies_par_en":"prior_pe.jcb"}
+    # test_d = os.path.join(model_d, "master_reinflate")
+    # if os.path.exists(test_d):
+    #     shutil.rmtree(test_d)
+    # template_d = org_template_d+"_relaxed"
+    # if os.path.exists(template_d):
+    #     shutil.rmtree(template_d)
+    # shutil.copytree(org_template_d,template_d)
+    # pst = pyemu.Pst(os.path.join(template_d, "pest.pst"))
+    # reweight(pst)
+    # pst.pestpp_options = {"ies_num_reals": num_reals,"ies_par_en":"prior_pe.jcb"}
     
-    pst.pestpp_options["ies_n_iter_reinflate"] = reinflate
-    pst.pestpp_options["ies_reinflate_num_reals"] = reinflate_num_reals   
-    pst.add_pars_as_obs(par_sigma_range=4,pst_path=template_d)
-    pst.dialate_par_bounds(1.5)
-    pgroups,ogroups = pst.adj_par_groups,pst.nnz_obs_groups
-    loc = pd.DataFrame(index=ogroups,columns=pgroups)
-    loc.loc[:,:] = 0.0
-    for pgroup in pgroups:
-        loc.loc[:,pgroup] = 1.0
-    loc.to_csv(os.path.join(template_d,"gloc.csv"))
-    pst.pestpp_options["ies_localizer"] = "gloc.csv"
-    pst.control_data.noptmax = 4
-    pst.write(os.path.join(template_d, "pest.pst"),version=2)
-    pyemu.os_utils.start_workers(template_d, exe_path, "pest.pst", num_workers=10, master_dir=test_d,
-                                 worker_root=model_d, port=port)
+    # pst.pestpp_options["ies_n_iter_reinflate"] = reinflate
+    # pst.control_data.noptmax = noptmax
+    # pst.write(os.path.join(template_d, "pest.pst"),version=2)
+    # pyemu.os_utils.start_workers(template_d, exe_path, "pest.pst", num_workers=10, master_dir=test_d,
+    #                              worker_root=model_d, port=port)
+
+    # test_d = os.path.join(model_d, "master_reinflate_relaxed")
+    # if os.path.exists(test_d):
+    #     shutil.rmtree(test_d)
+    # template_d = org_template_d+"_reinf_relaxed"
+    # if os.path.exists(template_d):
+    #     shutil.rmtree(template_d)
+    # shutil.copytree(org_template_d,template_d)
+    # pst = pyemu.Pst(os.path.join(template_d, "pest.pst"))
+    # reweight(pst)
+    # pst.pestpp_options = {"ies_num_reals": num_reals,"ies_par_en":"prior_pe.jcb"}
+    
+    # pst.pestpp_options["ies_n_iter_reinflate"] = reinflate
+    # pst.pestpp_options["ies_reinflate_num_reals"] = reinflate_num_reals   
+    # pst.add_pars_as_obs(par_sigma_range=4,pst_path=template_d)
+    # pst.dialate_par_bounds(1.5)
+    # pst.control_data.noptmax = noptmax
+    # pst.write(os.path.join(template_d, "pest.pst"),version=2)
+    # pyemu.os_utils.start_workers(template_d, exe_path, "pest.pst", num_workers=10, master_dir=test_d,
+    #                              worker_root=model_d, port=port)
+
+    # test_d = os.path.join(model_d, "master_reinflate_relaxed_gloc")
+    # if os.path.exists(test_d):
+    #     shutil.rmtree(test_d)
+    # template_d = org_template_d+"_reinf_relaxed"
+    # if os.path.exists(template_d):
+    #     shutil.rmtree(template_d)
+    # shutil.copytree(org_template_d,template_d)
+    # pst = pyemu.Pst(os.path.join(template_d, "pest.pst"))
+    # reweight(pst)
+    # pst.pestpp_options = {"ies_num_reals": num_reals,"ies_par_en":"prior_pe.jcb"}
+    
+    # pst.pestpp_options["ies_n_iter_reinflate"] = reinflate
+    # pst.pestpp_options["ies_reinflate_num_reals"] = reinflate_num_reals   
+    # pst.add_pars_as_obs(par_sigma_range=4,pst_path=template_d)
+    # pst.dialate_par_bounds(1.5)
+    # pgroups,ogroups = pst.adj_par_groups,pst.nnz_obs_groups
+    # loc = pd.DataFrame(index=ogroups,columns=pgroups)
+    # loc.loc[:,:] = 0.0
+    # for pgroup in pgroups:
+    #     loc.loc[:,pgroup] = 1.0
+    # loc.to_csv(os.path.join(template_d,"gloc.csv"))
+    # pst.pestpp_options["ies_localizer"] = "gloc.csv"
+    # pst.control_data.noptmax = 4
+    # pst.write(os.path.join(template_d, "pest.pst"),version=2)
+    # pyemu.os_utils.start_workers(template_d, exe_path, "pest.pst", num_workers=10, master_dir=test_d,
+    #                              worker_root=model_d, port=port)
     
     
     test_d = os.path.join(model_d, "master_noinflate")
@@ -4717,6 +4734,37 @@ def freyberg_reinflate_num_reals_invest():
     pyemu.os_utils.start_workers(template_d, exe_path, "pest.pst", num_workers=10, master_dir=test_d,
                                  worker_root=model_d, port=port)
     
+def compared_freyberg_inflate_runs():
+    model_d = "ies_freyberg"
+
+    m_ds = [os.path.join(model_d,m_d) for m_d in os.listdir(model_d) if m_d.startswith("master") and os.path.isdir(os.path.join(model_d,m_d))]
+    results = {}
+    for m_d in m_ds:
+        pst = pyemu.Pst(os.path.join(m_d,"pest.pst"))
+        results[os.path.split(m_d)[1].replace("master_","")] = pst
+    
+    keys = list(results.keys())
+    keys.sort()
+    cmap = plt.get_cmap("tab10")
+    fig,ax = plt.subplots(1,1,figsize=(10,10))
+
+    for i,k in enumerate(keys):
+        pst = results[k]
+        c = cmap((i/len(keys)))
+        phi = pst.ies.phiactual
+        model_runs = phi.total_runs.values
+        reals = np.log10(phi.iloc[:,6:].values)
+        [ax.plot(model_runs,reals[:,i],color=c) for i in range(reals.shape[1])]
+        ax.plot(model_runs,reals[:,0],color=c,label=k)
+    ax.legend(loc="upper right")
+    ax.grid()
+    plt.tight_layout()
+    plt.show()
+
+
+
+
+    
 
 
 if __name__ == "__main__":
@@ -4724,9 +4772,12 @@ if __name__ == "__main__":
     #tenpar_mean_iter_test()
     #tenpar_reinflate_num_reals_test()
     #freyberg_reinflate_num_reals_invest()
-    tenpar_mean_iter_test_sched()
+    #compared_freyberg_inflate_runs()
+    #tenpar_mean_iter_test_sched()
     #tenpar_uniformdist_invest()
     #temp_plot()
+    tenpar_mean_iter_sched_phifac_test()
+    #tenpar_consistency_test()
     #freyberg_regfac_invest()
     #freyberg_relaxation_invest()
     #tenpar_relaxation_invest()
