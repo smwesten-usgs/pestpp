@@ -328,7 +328,7 @@ void EnsembleSolver::update_multimodal_components(const double mm_alpha) {
                 csv << ",par_real_neighbor_" << j << ",phi,pdiff";
             }
             csv << endl;
-            string prname,orname;
+            string prname, orname;
             //for (auto& names : mm_real_name_map)
             for (auto real_name : preal_names)
             {
@@ -528,10 +528,10 @@ void EnsembleSolver::update_multimodal_components(const double mm_alpha) {
         if (pest_scenario.get_pestpp_options().get_ies_verbose_level() > 1) {
             csv << real_name;
         //for (auto &rname : pe_real_names_case) {
-        for (int i=0;i<pe_real_names_case.size();i++)
+        for (int ii=0;ii<pe_real_names_case.size();ii++)
         {
-            prname = pe_real_names_case[i];
-            orname = oe_real_names_case[i];
+            prname = pe_real_names_case[ii];
+            orname = oe_real_names_case[ii];
             if (prname == real_name)
                 continue;
             csv << "," << prname << ","  << par_phi_map.at(prname) << "," << euclid_par_dist.at(prname);
@@ -945,7 +945,7 @@ void EnsembleSolver::nonlocalized_solve(double cur_lam,bool use_glm_form, Parame
     for (auto i : real_idxs)
         oe_real_names.push_back(names[i]);
     vector<string> pe_real_names = pe_upgrade.get_real_names();
-    string obs_center_on = "";
+    string obs_center_on;
     if ((center_on.size() > 0) && (center_on != MEDIAN_CENTER_ON_NAME)) {
         for (int i = 0; i < pe_real_names.size(); i++) {
             if (pe_real_names[i] == center_on) {
