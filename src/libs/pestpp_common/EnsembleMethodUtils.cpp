@@ -7756,7 +7756,7 @@ void EnsembleMethod::reset_par_ensemble_to_prior_mean(double reinflate_factor,in
     vector<string> pebase_real_names = pe_base.get_real_names();
 	vector<string> oebase_real_names = oe_base.get_real_names();
 
-    if ((reinflate_num_reals > 0) && (reinflate_num_reals < pe_base.shape().first))
+    if ((reinflate_num_reals != 0) && (abs(reinflate_num_reals) <= pe_base.shape().first))
     {
         vector<string> tpar,tobs;
         bool has_base = false;
@@ -7769,7 +7769,7 @@ void EnsembleMethod::reset_par_ensemble_to_prior_mean(double reinflate_factor,in
             }
         }
         bool found_base = false;
-        for (int i=0;i<reinflate_num_reals;i++)
+        for (int i=0;i<abs(reinflate_num_reals);i++)
         {
             tpar.push_back(pebase_real_names[i]);
         	tobs.push_back(oebase_real_names[i]);
@@ -7787,9 +7787,40 @@ void EnsembleMethod::reset_par_ensemble_to_prior_mean(double reinflate_factor,in
         }
 
     }
+	Eigen::MatrixXd anoms;
+	if (reinflate_num_reals < 0) {
+		message(1,"draw new parameter ensemble from current ensemble of size ",abs(reinflate_num_reals));
+		anoms = pe.get_eigen_anomalies();
+		anoms *= 1.0/sqrt(static_cast<double>(anoms.rows()));
+		Eigen::MatrixXd draws(pebase_real_names.size(), anoms.cols());
+		draws.setZero();
+		performance_log->log_event("making standard normal draws");
+		//RedSVD::sample_gaussian(draws);
+		for (int i = 0; i < pebase_real_names.size(); i++)
+		{
+			for (int j = 0; j < anoms.cols(); j++)
+			{
+				draws(i, j) = draw_standard_normal(rand_gen);
+			}
+		}
 
-    Eigen::MatrixXd anoms = pe_base.get_eigen_anomalies(pebase_real_names, pe.get_var_names(), pest_scenario.get_pestpp_options().get_ies_center_on());
-    anoms = anoms * reinflate_factor;
+		anoms = (anoms * draws.transpose()).transpose();
+		draws.resize(0,0);
+		if (abs(reinflate_factor) < 1.0) {
+			performance_log->log_event("adding scaled prior anomalies to new ensemble");
+			Eigen::MatrixXd pranoms = pe_base.get_eigen_anomalies(pebase_real_names, pe.get_var_names(),
+				pest_scenario.get_pestpp_options().get_ies_center_on());
+			vector<int> seq = uniform_int_draws(pebase_real_names.size(),0,pebase_real_names.size(),rand_gen);
+			for (int i=0;i<pebase_real_names.size();i++) {
+				anoms.row(i).array() += (abs(reinflate_factor) * pranoms.row(seq[i]).array());
+			}
+		}
+	}
+	else {
+		anoms = pe_base.get_eigen_anomalies(pebase_real_names, pe.get_var_names(), pest_scenario.get_pestpp_options().get_ies_center_on());
+		anoms = anoms * reinflate_factor;
+	}
+
     performance_log->log_event("getting current parameter ensemble mean vector");
     vector<double> mean_vec = pe.get_mean_stl_var_vector();
     Eigen::VectorXd offset(mean_vec.size());
@@ -7806,7 +7837,7 @@ void EnsembleMethod::reset_par_ensemble_to_prior_mean(double reinflate_factor,in
     {
         anoms.col(i) = anoms.col(i).array() + offset[i];
     }
-    performance_log->log_event("forming new parameter ensemble of mean-shifted prior realizations");
+    performance_log->log_event("forming new parameter ensemble of mean-shifted realizations");
     ParameterEnsemble new_pe = ParameterEnsemble(&pest_scenario,&rand_gen,anoms,pebase_real_names,pe.get_var_names());
 
     new_pe.set_trans_status(pe.get_trans_status());
@@ -7815,7 +7846,7 @@ void EnsembleMethod::reset_par_ensemble_to_prior_mean(double reinflate_factor,in
         new_pe.enforce_bounds(performance_log, false);
     }
 
-    message(0,"running new mean-shifted prior realizations: ",new_pe.shape().first);
+    message(0,"running new reinflated realizations: ",new_pe.shape().first);
     stringstream ss;
     ss.str("");
     ss << "iteration:" << iter;
@@ -7832,7 +7863,7 @@ void EnsembleMethod::reset_par_ensemble_to_prior_mean(double reinflate_factor,in
     new_pe = ParameterEnsemble();
     report_and_save(NetPackage::NULL_DA_CYCLE);
     ph.update(oe,pe,weights);
-    message(0,"mean-shifted prior phi report:");
+    message(0,"reinflation phi report:");
 
 
     best_mean_phis.push_back(ph.get_representative_phi(L2PhiHandler::phiType::COMPOSITE));
