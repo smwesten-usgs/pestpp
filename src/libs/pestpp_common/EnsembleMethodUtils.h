@@ -503,6 +503,6 @@ protected:
 
     double get_lambda();
 
-    void reset_par_ensemble_to_prior_mean(double reinflate_factor,int reinflate_num_reals);
+    void reinflate_par_ensemble(double reinflate_factor,int reinflate_num_reals);
 };
 #endif

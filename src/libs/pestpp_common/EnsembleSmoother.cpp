@@ -98,7 +98,7 @@ void IterEnsembleSmoother::iterate_2_solution()
             message(2,"incrementing iteration count for reinflation cycle");
             iter++;
 
-            reset_par_ensemble_to_prior_mean(current_reinflate_factor,current_num_reals);
+            reinflate_par_ensemble(current_reinflate_factor,current_num_reals);
             //adjust_weights(true);
             iters_since_reinflate = 0;
             n_iter_reinflate_idx++;

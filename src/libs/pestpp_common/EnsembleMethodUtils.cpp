@@ -4356,7 +4356,7 @@ void EnsembleMethod::sanity_checks()
     {
         if (fac <= 0.0)
         {
-            errors.push_back("reinflation factor <= 0.0");
+            warnings.push_back("reinflation factor <= 0.0");
         }
         else if (fac > 1.0)
         {
@@ -7726,7 +7726,7 @@ bool EnsembleMethod::solve(bool use_mda, vector<double> inflation_factors, vecto
 	return true;
 }
 
-void EnsembleMethod::reset_par_ensemble_to_prior_mean(double reinflate_factor,int reinflate_num_reals){
+void EnsembleMethod::reinflate_par_ensemble(double reinflate_factor,int reinflate_num_reals){
 
     string min_phi_name = "";
     //find the min phi real...
@@ -7795,7 +7795,7 @@ void EnsembleMethod::reset_par_ensemble_to_prior_mean(double reinflate_factor,in
 		Eigen::MatrixXd draws(anoms.rows(),pebase_real_names.size());
 		draws.setZero();
 		performance_log->log_event("making standard normal draws");
-		//RedSVD::sample_gaussian(draws);
+
 		for (int i = 0; i < pebase_real_names.size(); i++)
 		{
 			for (int j = 0; j < anoms.rows(); j++)
@@ -7803,24 +7803,25 @@ void EnsembleMethod::reset_par_ensemble_to_prior_mean(double reinflate_factor,in
 				draws(j, i) = draw_standard_normal(rand_gen);
 			}
 		}
-		// for (int i=0;i<pebase_real_names.size(); i++) {
-		// 	draws.row(i) = anoms * draws.row(i).transpose();
-		// }
+		performance_log->log_event("making standard normal draws");
 		anoms = (anoms.transpose() * draws).transpose();
 		draws.resize(0,0);
 		if (abs(reinflate_factor) < 1.0) {
 			performance_log->log_event("adding scaled prior anomalies to new ensemble");
 			Eigen::MatrixXd pranoms = pe_base.get_eigen_anomalies(pebase_real_names, pe.get_var_names(),
 				pest_scenario.get_pestpp_options().get_ies_center_on());
-			vector<int> seq = uniform_int_draws(pebase_real_names.size(),0,pebase_real_names.size(),rand_gen);
+			vector<int> seq = uniform_int_draws(pebase_real_names.size(),0,pebase_real_names.size()-1,rand_gen);
 			for (int i=0;i<pebase_real_names.size();i++) {
+				if (pebase_real_names[i] == BASE_REAL_NAME) {
+					continue;
+				}
 				anoms.row(i).array() += (abs(reinflate_factor) * pranoms.row(seq[i]).array());
 			}
 		}
 	}
 	else {
 		anoms = pe_base.get_eigen_anomalies(pebase_real_names, pe.get_var_names(), pest_scenario.get_pestpp_options().get_ies_center_on());
-		anoms = anoms * reinflate_factor;
+		anoms = anoms * abs(reinflate_factor);
 	}
 
     performance_log->log_event("getting current parameter ensemble mean vector");

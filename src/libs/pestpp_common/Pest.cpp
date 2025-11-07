@@ -294,6 +294,21 @@ void Pest::check_inputs(ostream &f_rec, bool forgive, bool forgive_parchglim, in
 		}
 
 	}
+	vector<string> obs_problems;
+	for (string& oname : ctl_ordered_obs_names) {
+		if (observation_info.get_weight(oname) < 0) {
+			ss.str("");
+			ss << "observation " << oname << " weight less than zero";
+			obs_problems.push_back(ss.str());
+		}
+	}
+
+	for (auto &str : obs_problems)
+	{
+		cout << "observation error: " << str << endl;
+		f_rec << "observation error: " << str << endl;
+		err = true;
+	}
 
 
 
