@@ -2512,7 +2512,7 @@ def tenpar_mean_iter_test_sched():
     count = 0
     with open(os.path.join(test_d,"pest.rec"),'r') as f:
         for line in f:
-            if "running new mean-shifted prior realizations" in line:
+            if "running new reinflated realizations" in line:
                 count += 1
     print(count)
     assert count == 2
@@ -2565,7 +2565,7 @@ def tenpar_mean_iter_test_sched():
     facs = []
     with open(os.path.join(test_d,"pest.rec"),'r') as f:
         for line in f:
-            if "running new mean-shifted prior realizations" in line:
+            if "running new reinflated realizations" in line:
                 count += 1
             elif "reinflation factor:" in line:
                 facs.append(float(line.split("reinflation factor:")[1]))
@@ -4840,10 +4840,10 @@ def tenpar_reinflate_num_reals_2_test():
 if __name__ == "__main__":
     #freyberg_pdc_test()
     #tenpar_mean_iter_test()
-    tenpar_reinflate_num_reals_2_test()
+    #tenpar_reinflate_num_reals_2_test()
     #freyberg_reinflate_num_reals_invest()
     #compared_freyberg_inflate_runs()
-    #tenpar_mean_iter_test_sched()
+    tenpar_mean_iter_test_sched()
     #tenpar_uniformdist_invest()
     #temp_plot()
     #tenpar_mean_iter_sched_phifac_test()
