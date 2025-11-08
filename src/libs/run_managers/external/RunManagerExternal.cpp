@@ -3,6 +3,7 @@
 #include "utilities.h"
 #include "config_os.h"
 #include <system_variables.h>
+#include "model_interface.h"
 
 using namespace std;
 
