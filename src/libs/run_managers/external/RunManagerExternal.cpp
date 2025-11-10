@@ -7,11 +7,10 @@
 
 using namespace std;
 
-RunManagerExternal::RunManagerExternal(const vector<string> _comline_vec,
-	const vector<string> _tplfile_vec, const vector<string> _inpfile_vec,
-	const vector<string> _insfile_vec, const vector<string> _outfile_vec,
-	const string &stor_filename, const string &_ext_filename,
-	const string &_exi_filename,int _max_n_failure, int _sleep_ms)
+RunManagerExternal::RunManagerExternal(vector<string> _comline_vec,
+	vector<string> _tplfile_vec, vector<string> _inpfile_vec,
+	vector<string> _insfile_vec, vector<string> _outfile_vec,
+	string &stor_filename, int _max_n_failure, int _sleep_ms)
 	: RunManagerAbstract(_comline_vec, _tplfile_vec, _inpfile_vec,
 	_insfile_vec, _outfile_vec, stor_filename, _max_n_failure), sleep_ms(_sleep_ms)
 {
