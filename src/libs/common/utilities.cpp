@@ -1920,8 +1920,10 @@ void ExternalCtlFile::read_file(ofstream& f_rec)
 					
 					last_size = quote_tokens[i].size();
 					if (quote_tokens[i].substr(last_size-1,last_size) == ddelim) {
-						temp_tokens.pop_back();
-						last_empty_with_delim = true;
+						if (quote_tokens[i].substr(last_size-2,1) == ddelim) {
+							temp_tokens.pop_back();
+							last_empty_with_delim = true;
+						}
 					}
 					for (auto& t : temp_tokens)
                     {
