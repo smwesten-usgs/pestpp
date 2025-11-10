@@ -2468,6 +2468,11 @@ in a command line window to ascertain the hostname of a machine.
 
 If, for some reason, a agent ceases execution, or the computer on which it resides loses its connection with the manager, it should be re-started using the above command. A agent does not have to be restarted using the “/r” switch as its tasks are repetitive and simple, namely to receive parameters, run the model, and then send model outputs to the PESTPP-XXX manager.
 
+All fo the PEST++ tools also support an "external" run manager, which as the name suggests, relies on some external scheme to process model runs.  The external run manager expects this external scheme to interact with the run-storage file (namely, *case*.rns).  When the external run manager is being used, the "model command(s)" in the pest control file are called only one time per batch of runs to be completed.  In this way, users can call their external run management scheme(s) programmatically.  pyEMU has support for reading and updating the (binary) run storage file.  The external run mananger is invoked with the "/e" command line switch:
+
+| pestpp-xxx case /e|
+|-------------------|
+
 ### <a id='s9-3-4' />5.3.4 Run Management Record File
 
 The PESTPP-XXX manager records all communications between it and its agents in a run management record file. This file is named *case.rmr* where *case* is the filename base of the PEST control file. The agent that execute runs write all information related to communications with the master to the *panther_agent.rec* file, which is written in the local agent directory.
