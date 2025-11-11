@@ -4948,10 +4948,6 @@ void EnsembleMethod::initialize(int cycle, bool run, bool use_existing)
 	}
 
 	verbose_level = pest_scenario.get_pestpp_options_ptr()->get_ies_verbose_level();
-	if (pest_scenario.get_n_adj_par() >= 1e6)
-	{
-		message(0, "You are a god among mere mortals!");
-	}
 
 	message(1, "using REDSVD for truncated svd solve");
 	message(1, "maxsing:", pest_scenario.get_svd_info().maxsing);
@@ -5435,8 +5431,9 @@ void EnsembleMethod::initialize(int cycle, bool run, bool use_existing)
 
 	pe_base = pe; //copy
 	//reorder this for later
-	pe_base.reorder(vector<string>(), act_par_names);
-
+	if (pe.shape().second == act_par_names.size()) {
+		pe_base.reorder(vector<string>(), act_par_names);
+	}
 
 	//the hard way to restart
 	if (obs_restart_csv.size() > 0)

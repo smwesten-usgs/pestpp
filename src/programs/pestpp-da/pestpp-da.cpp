@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
 		string rns_file = file_manager.build_filename("rns");
 		int flag = remove(rns_file.c_str());
 
-		
+
 		if (cmdline.runmanagertype == CmdLine::RunManagerType::GENIE)
 		{
 			cerr << "genie run manager ('/g') not supported by pestpp-da, please use panther instead" << endl;
