@@ -17,11 +17,11 @@ pyemu = "*"
 install-modflow = "get-modflow --repo executables $CONDA_PREFIX/bin"
 
 # debug build
-configure-debug = { cmd = "cmake -G Ninja -S . -B .build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER_WORKS=1", depends-on = ["clean-build"], outputs = [".build"] }
+configure-debug = { cmd = "cmake -G Ninja -S . -B .build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER_WORKS=1", depends-on = ["clean-build"], outputs = ["_build"] }
 build-debug = { cmd = "cmake --build _build", depends-on = ["configure-debug"] }
 
 # release build
-configure = { cmd = "cmake -G Ninja -S . -B .build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_WORKS=1", depends-on = ["clean-build"], outputs = [".build"] }
+configure = { cmd = "cmake -G Ninja -S . -B .build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER_WORKS=1", depends-on = ["clean-build"], outputs = ["_build"] }
 build-release = { cmd = "cmake --build _build", depends-on = ["configure"] }
 
 # generic build
