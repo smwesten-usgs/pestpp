@@ -2343,12 +2343,18 @@ void CmdLine::startup_report(std::ostream &s, string start_string) {
 
 	string version = PESTPP_VERSION;
 	s << endl << endl << "version: " << version << endl;
-	s << "binary compiled on " << __DATE__ << " at " << __TIME__ << endl << endl;
+	s << "binary compiled on " << __DATE__ << " at " << __TIME__ << endl;
 	s << "using control file: \"" << ctl_file_name << "\"" << endl;
 	s << "in directory: \"" << cwd << "\"" << endl;
 	s << "on host: \"" << w_get_hostname() << "\"" << endl;
 	s << "on a(n) " << opersys << " operating system" << endl;
-	s << "started at " << start_string << endl << endl;
+#ifdef _DEBUG
+	s << "with debugging configuration" << endl;
+#else
+	s << "with release configuration" << endl;
+#endif
+	if (start_string.size() > 0)
+		s << "started at " << start_string << endl << endl;
 }
 
 // end of namespace pest_utils
