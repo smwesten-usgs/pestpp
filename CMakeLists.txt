@@ -1,6 +1,10 @@
 # This is the top-level CMake file for PEST++
 cmake_minimum_required(VERSION 3.15)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  add_compile_definitions(_DEBUG)
+endif()
+
 # Get PESTPP_VERSION from common source header
 file(READ "${CMAKE_SOURCE_DIR}/src/libs/common/config_os.h" _file)
 string(REGEX MATCH "PESTPP_VERSION \"([0-9\.]+)\"" _ ${_file})

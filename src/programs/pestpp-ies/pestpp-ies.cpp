@@ -32,9 +32,10 @@
 
 using namespace std;
 using namespace pest_utils;
-#define _DEBUG
+
 int main(int argc, char* argv[])
 {
+
 #ifndef _DEBUG
 	try {
 #endif
