@@ -1197,31 +1197,22 @@ pair<map<string,int>, map<string, int>> Ensemble::prepare_csv(const vector<strin
 	for (auto &_name : names)
 		if (hset.find(_name) == end)
 			missing_names.push_back(_name);
-	/*if (pest_scenario_ptr->get_pestpp_options().get_ies_csv_by_reals())
-	{
-		if (missing_names.size() > 0)
-		{
-			stringstream ss;
-			ss << " the following names were not found in the csv file header:" << endl;
-			for (auto &n : missing_names) ss << n << endl;
-			if (!forgive)
-				throw runtime_error(ss.str());
-			else
-				cout << ss.str() << endl << "continuing anyway..." << endl;
-		}
-	}*/
+
 	if (missing_names.size() > 0)
 	{
 		stringstream ss;
 		if (csv_by_reals)
-			ss << " the following names were not found in the csv file header:" << endl;
+			ss << missing_names.size() << " names were not found in the csv file header:" << endl;
 		else
-			ss << " the following names were not found in the first column of the csv file:" << endl;
-		for (auto& n : missing_names) ss << n << endl;
-		if (!forgive)
+			ss << missing_names.size() << " names were not found in the first column of the csv file:" << endl;
+		cout << "..." << ss.str() << endl;
+		for (auto& n : missing_names) {
+			ss << n << endl;
+		}
+
+		if (!forgive) {
 			throw runtime_error(ss.str());
-		else
-			cout << ss.str() << endl << "continuing anyway..." << endl;
+		}
 	}
 
 	vector<string> header_names;
