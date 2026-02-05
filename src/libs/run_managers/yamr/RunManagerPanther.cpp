@@ -47,8 +47,7 @@ using namespace pest_utils;
 const int RunManagerPanther::BACKLOG = 1000;
 const int RunManagerPanther::MAX_FAILED_PINGS = 60;
 const int RunManagerPanther::N_PINGS_UNRESPONSIVE = 3;
-const int RunManagerPanther::MIN_PING_INTERVAL_SECS = 60;				// Ping each slave at most once every minute
-const int RunManagerPanther::MAX_PING_INTERVAL_SECS = 120;				// Ping each slave at least once every 2 minutes
+const int RunManagerPanther::MAX_PING_INTERVAL_SECS = 120;				// Ping each agent at least once every 2 minutes
 const int RunManagerPanther::MAX_CONCURRENT_RUNS_LOWER_LIMIT = 1;
 const int RunManagerPanther::IDLE_THREAD_SIGNAL_TIMEOUT_SECS = 10;  // Allow up to 10s for the run_idle_async() thread to acknowledge signals (pause idling, terminate)
 const double RunManagerPanther::MIN_AVGRUNMINS_FOR_KILL = 0.01; //minimum avg runtime to try to kill and/or resched runs
@@ -274,7 +273,8 @@ int AgentInfoRec::seconds_since_last_ping_time() const
 
 RunManagerPanther::RunManagerPanther(const string& stor_filename, const string& _port, ofstream& _f_rmr, int _max_n_failure,
 	double _overdue_reched_fac, double _overdue_giveup_fac, double _overdue_giveup_minutes, bool _should_echo, const vector<string>& par_names,
-	const vector<string>& obs_names,int _timeout_milliseconds,int _echo_interval_milliseconds, bool _persistent_workers)
+	const vector<string>& obs_names,int _timeout_milliseconds,int _echo_interval_milliseconds, bool _persistent_workers,
+	int _min_ping_interval_secs)
 
 	: RunManagerAbstract(vector<string>(), vector<string>(), vector<string>(),
 		vector<string>(), vector<string>(), stor_filename, _max_n_failure),
@@ -283,6 +283,7 @@ RunManagerPanther::RunManagerPanther(const string& stor_filename, const string& 
 	terminate_idle_thread(false), currently_idle(true), idling(false), idle_thread_finished(false),
 	idle_thread(nullptr), should_echo(_should_echo),nftx(0),timeout_milliseconds(_timeout_milliseconds),
     echo_interval_milliseconds(_echo_interval_milliseconds),persistent_workers(_persistent_workers)
+	,min_ping_interval_secs(_min_ping_interval_secs)
 {
 
 	const char * t =
@@ -491,7 +492,7 @@ RunManagerAbstract::RUN_UNTIL_COND RunManagerPanther::run_until(RUN_UNTIL_COND c
 	cout << "    running model " << num_runs << " times" << endl;
 	f_rmr << "running model " << num_runs << " times" << endl;
 	cout << "    starting at " << pest_utils::get_time_string() << endl;
-	if (agent_info_set.size() == 0) // first entry is the listener, slave appears after this
+	if (agent_info_set.size() == 0) // first entry is the listener, agent appears after this
 	{
 		cout << endl << "    waiting for agents to appear..." << endl << endl;
 		//f_rmr << endl << "    waiting for agents to appear..." << endl << endl;
@@ -964,7 +965,7 @@ bool RunManagerPanther::ping(int i_sock)
 	}
 	//check if it is time to ping again...
 	double duration = (double)agent_info_iter->seconds_since_last_ping_time();
-	double ping_time = min(double(MAX_PING_INTERVAL_SECS), max(double(MIN_PING_INTERVAL_SECS), agent_info_iter->get_runtime_sec()));
+	double ping_time = min(double(MAX_PING_INTERVAL_SECS), max(double(min_ping_interval_secs), agent_info_iter->get_runtime_sec()));
 	if (duration >= ping_time)
 	{
 		ping_sent = true;
@@ -985,7 +986,9 @@ bool RunManagerPanther::ping(int i_sock)
 			}
 		}
 		else agent_info_iter->set_ping(true);
-			//report("ping sent to agent:" + sock_hostname + "$" + agent_info_iter->get_work_dir(), false);
+		if (min_ping_interval_secs != 60) {
+			report("ping sent to agent:" + sock_hostname + "$" + agent_info_iter->get_work_dir(), false);
+		}
 
 #ifdef _DEBUG
 		report("ping sent to agent:" + sock_hostname + "$" + agent_info_iter->get_work_dir(), false);
@@ -1007,7 +1010,7 @@ bool RunManagerPanther::listen(pest_utils::thread_flag* terminate/* = nullptr*/)
 	read_fds = master; // copy it
 	if (w_select(fdmax+1, &read_fds, NULL, NULL, &tv) == -1)
 	{
-		// there are no slaves available.  W need to keep listening until at least one appears
+		// there are no agents available.  W need to keep listening until at least one appears
 		got_message = true;
 		return got_message;
 	}
@@ -1560,7 +1563,9 @@ void RunManagerPanther::process_message(int i_sock)
 	}
 	else if (net_pack.get_type() == NetPackage::PackType::PING)
 	{
-		//report("ping received from agent:" + host_name + "$" + agent_info_iter->get_work_dir(), false);
+		if (min_ping_interval_secs != 60) {
+			report("ping received from agent:" + host_name + "$" + agent_info_iter->get_work_dir(), false);
+		}
 #ifdef _DEBUG
 		report("ping received from agent:" + host_name + "$" + agent_info_iter->get_work_dir(), false);
 #endif

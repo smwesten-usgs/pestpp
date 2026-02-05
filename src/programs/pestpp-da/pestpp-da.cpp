@@ -481,7 +481,8 @@ int main(int argc, char* argv[])
 				pest_scenario.get_ctl_ordered_obs_names(),
                 pest_scenario.get_pestpp_options().get_panther_timeout_milliseconds(),
                 pest_scenario.get_pestpp_options().get_panther_echo_interval_milliseconds(),
-                pest_scenario.get_pestpp_options().get_panther_persistent_workers());
+                pest_scenario.get_pestpp_options().get_panther_persistent_workers(),
+				pest_scenario.get_pestpp_options().get_panther_ping_interval_secs());
 			run_manager_ptr->initialize(pest_scenario.get_ctl_parameters(), pest_scenario.get_ctl_observations());
 		}
         else if (cmdline.runmanagertype == CmdLine::RunManagerType::EXTERNAL)

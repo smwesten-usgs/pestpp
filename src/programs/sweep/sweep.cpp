@@ -636,7 +636,8 @@ int main(int argc, char* argv[])
                     vector<string>{}, vector<string>{},
                     pest_scenario.get_pestpp_options().get_panther_timeout_milliseconds(),
                     pest_scenario.get_pestpp_options().get_panther_echo_interval_milliseconds(),
-                    pest_scenario.get_pestpp_options().get_panther_persistent_workers());
+                    pest_scenario.get_pestpp_options().get_panther_persistent_workers(),
+					pest_scenario.get_pestpp_options().get_panther_ping_interval_secs());
 		}
 		else if (cmdline.runmanagertype == CmdLine::RunManagerType::EXTERNAL)
 		{

@@ -1438,13 +1438,13 @@ bool PestppOptions::assign_value_by_key_continued(const string& key, const strin
         return true;
 
     }
-    else if (key == "PANTHER_PERSISTENT_WORKERS")
+
+    else if (key == "PANTHER_PING_INTERVAL_SECS")
     {
-        panther_persistent_workers = pest_utils::parse_string_arg_to_bool(value);
-        return true;
+    	convert_ip(value, panther_ping_interval_secs);
+    	return true;
     }
 
-	
 	return false;
 }
 
@@ -1923,6 +1923,8 @@ void PestppOptions::summary(ostream& os) const
     os << "panther_timeout_milliseconds: " << panther_timeout_milliseconds << endl;
     os << "panther_echo_interval_milliseconds: " << panther_echo_interval_milliseconds << endl;
     os << "panther_persistent_workers: " << panther_persistent_workers << endl;
+	os << "panther_ping_interval_secs: " << panther_ping_interval_secs << endl;
+
 
     os << endl;
 
@@ -2467,6 +2469,7 @@ void PestppOptions::set_defaults()
     set_panther_timeout_milliseconds(-999);
     set_panther_echo_interval_milliseconds(1000);
     set_panther_persistent_workers(true);
+	set_panther_ping_interval_secs(60);
 
 }
 
