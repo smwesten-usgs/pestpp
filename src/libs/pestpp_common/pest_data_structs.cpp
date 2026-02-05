@@ -1439,6 +1439,12 @@ bool PestppOptions::assign_value_by_key_continued(const string& key, const strin
 
     }
 
+    else if (key == "PANTHER_PERSISTENT_WORKERS")
+    {
+    	panther_persistent_workers = pest_utils::parse_string_arg_to_bool(value);
+    	return true;
+    }
+
     else if (key == "PANTHER_PING_INTERVAL_SECS")
     {
     	convert_ip(value, panther_ping_interval_secs);
