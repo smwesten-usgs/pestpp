@@ -432,8 +432,9 @@ void Constraints::initialize(vector<string>& ctl_ord_dec_var_names, double _dbl_
 
 		//TODO: investigate a pi constraint only formulation
 		if (num_obs_constraints() == 0)
-			throw_constraints_error("no constraints/objectives found in groups: ", constraint_groups);
-	}
+			throw_constraints_error("no constraints/objectives found in groups: ", constraint_groups, false);
+
+		}
 
 
 	constraints_obs = pest_scenario.get_ctl_observations().get_subset(ctl_ord_obs_constraint_names.begin(), ctl_ord_obs_constraint_names.end());
