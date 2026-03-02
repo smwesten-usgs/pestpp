@@ -932,7 +932,7 @@ int RunManagerPanther::get_current_sleep_timeout_milliseconds(const int org_time
     }
 
     //cout << timeout;
-    return timeout;
+    return static_cast<int>(std::round(timeout));
 }
 
 bool RunManagerPanther::ping(int i_sock)
@@ -986,7 +986,7 @@ bool RunManagerPanther::ping(int i_sock)
 			}
 		}
 		else agent_info_iter->set_ping(true);
-		if (min_ping_interval_secs != 60) {
+		if (min_ping_interval_secs < 60) {
 			report("ping sent to agent:" + sock_hostname + "$" + agent_info_iter->get_work_dir(), false);
 		}
 
@@ -1056,6 +1056,8 @@ void RunManagerPanther::close_agents()
 		if (slave_info_iter != slave_info_set.end())
 			close_slave(slave_info_iter);
 	}*/
+	int tries = 0;
+	int max_tries = 1e6;
 	while (socket_to_iter_map.size() > 0)
 	{
 		listen();
@@ -1066,7 +1068,11 @@ void RunManagerPanther::close_agents()
 			close_agent(si);
 
 		w_sleep(get_current_sleep_timeout_milliseconds(timeout_milliseconds));
-
+		tries++;
+		if (tries >= max_tries) {
+			cout << "error closing agents, max attempts exceeded...continuing" << endl;
+			break;
+		}
 	}
 }
 
@@ -1100,12 +1106,19 @@ void RunManagerPanther::close_agent(list<AgentInfoRec>::iterator agent_info_iter
 	if (open_file_socket_map.find(i_sock) != open_file_socket_map.end())
     {
 	    string fname = open_file_socket_map.at(i_sock);
-        pair<map<string ,ofstream*>::iterator, bool> ret = open_file_trans_streams.insert(pair<string,ofstream*>(fname,new ofstream));
-        ofstream& out = *ret.first->second;
+
+		pair<map<string ,ofstream*>::iterator, bool> ret = open_file_trans_streams.insert(pair<string,ofstream*>(fname,new ofstream));
+		auto it = open_file_trans_streams.find(fname);
+		/*ofstream& out = *ret.first->second;
         int file_size = out.tellp();
         out.flush();
-        out.close();
-        open_file_trans_streams.erase(ret.first);
+        out.close();*/
+		//open_file_trans_streams.erase(ret.first);
+		int file_size = it->second->tellp();
+		it->second->flush();
+		it->second->close();
+		delete it->second;
+		open_file_trans_streams.erase(it);
         stringstream ss;
         ss.str("");
         ss << "lost comms with agent, closed file:" << fname << " bytes:" << file_size << "  transferred";
@@ -1915,7 +1928,7 @@ void RunManagerPanther::kill_all_active_runs()
 	list<list<AgentInfoRec>::iterator> iter_list;
 	list<AgentInfoRec>::iterator iter_b, iter_e;
 	bool active_runs = true;
-	for (int n_tries = 0; active_runs && n_tries >= 100; ++n_tries)
+	for (int n_tries = 0; active_runs && n_tries < 100; ++n_tries)
 	{
 		init_agents();
 		active_runs = false;

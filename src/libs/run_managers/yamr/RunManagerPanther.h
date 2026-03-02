@@ -26,7 +26,6 @@
 #include <chrono>
 #include <list>
 #include <thread>
-#include "network_wrapper.h"
 #include "network_package.h"
 #include "RunManagerAbstract.h"
 #include "RunStorage.h"
