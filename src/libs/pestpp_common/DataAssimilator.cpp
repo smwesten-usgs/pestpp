@@ -151,7 +151,7 @@ void DataAssimilator::da_update(int cycle)
 		else
 			accept = solve_glm(cycle);
 		report_and_save(cycle);
-		ph.update(oe, pe);
+		ph.update(oe, pe, weights);
 		last_best_mean = ph.get_representative_phi(L2PhiHandler::phiType::COMPOSITE);
 		last_best_std = ph.get_std(L2PhiHandler::phiType::COMPOSITE);
 		ph.report(true);
@@ -331,7 +331,6 @@ map<int, map<string, double>> process_da_obs_cycle_table(Pest& pest_scenario, ve
 					continue;
 				}
 				cycle_map[tbl_obs_names[ii]] = val;
-				ncycles_in_tables.push_back(cycle);
 				ncycles_in_tables.push_back(cycle);
 
 				// make sure cycle numbers are sorted and unique
