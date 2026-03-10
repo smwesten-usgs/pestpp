@@ -1,3 +1,7 @@
+/**
+ * @file EnsembleMethodUtils.cpp
+ * @brief Implementation of EnsembleMethodUtils.
+ */
 #include <random>
 #include <map>
 #include <iomanip>
@@ -235,6 +239,11 @@ void MmNeighborThread::work(int tid, int verbose_level, double mm_alpha, map<str
 }
 
 
+/**
+ * @brief Update multimodal components.
+ *
+ * @param mm_alpha Description.
+ */
 void EnsembleSolver::update_multimodal_components(const double mm_alpha) {
     mm_real_idx_map.clear();
     mm_q_vec_map.clear();

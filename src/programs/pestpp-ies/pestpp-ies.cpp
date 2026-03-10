@@ -1,3 +1,7 @@
+/**
+ * @file pestpp-ies.cpp
+ * @brief Implementation of pestpp-ies.
+ */
 // pestpp-ies.cpp : Defines the entry point for the console application.
 //
 
@@ -33,6 +37,14 @@
 using namespace std;
 using namespace pest_utils;
 
+/**
+ * @brief Main.
+ *
+ * @param argc Description.
+ * @param argv Description.
+ *
+ * @return Description.
+ */
 int main(int argc, char* argv[])
 {
 

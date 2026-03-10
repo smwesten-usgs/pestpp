@@ -16,6 +16,11 @@
 	You should have received a copy of the GNU General Public License
 	along with PEST++.  If not, see<http://www.gnu.org/licenses/>.
 */
+/**
+ * @file main.cpp
+ * @brief Implementation of main.
+ */
+
 
 #include "RunManagerPanther.h" //needs to be first because it includes winsock2.h
 #include <iostream>
@@ -51,6 +56,14 @@ using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
 
+/**
+ * @brief Main.
+ *
+ * @param argc Description.
+ * @param argv Description.
+ *
+ * @return Description.
+ */
 int main(int argc, char* argv[])
 {
 #ifndef _DEBUG

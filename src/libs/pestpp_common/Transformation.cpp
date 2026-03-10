@@ -16,6 +16,11 @@
 	You should have received a copy of the GNU General Public License
 	along with PEST++.  If not, see<http://www.gnu.org/licenses/>.
 */
+/**
+ * @file Transformation.cpp
+ * @brief Implementation of Transformation.
+ */
+
 #include <string>
 #include <map>
 #include <set>
@@ -50,6 +55,11 @@ void TranMapBase::insert(const string &item_name, double item_value)
 }
 
 
+/**
+ * @brief Insert.
+ *
+ * @param pars Description.
+ */
 void TranMapBase::insert(const Parameters &pars)
 {
 	for (const auto &ipar : pars)
@@ -58,6 +68,11 @@ void TranMapBase::insert(const Parameters &pars)
 	}
 }
 
+/**
+ * @brief Reset.
+ *
+ * @param pars Description.
+ */
 void TranMapBase::reset(const Parameters &pars)
 {
 	items.clear();
@@ -67,6 +82,11 @@ void TranMapBase::reset(const Parameters &pars)
 	}
 }
 
+/**
+ * @brief Print.
+ *
+ * @param os Description.
+ */
 void TranMapBase::print(ostream &os) const
 {
 	os << "Transformation name = " << name << "; (type=TranMapBase)" << endl;
@@ -76,6 +96,13 @@ void TranMapBase::print(ostream &os) const
 	}
 }
 
+/**
+ * @brief Get value.
+ *
+ * @param name Description.
+ *
+ * @return Description.
+ */
 pair<bool, double> TranMapBase::get_value(const string &name) const
 {
 	pair<bool, double> ret_val(false, 0.0);
@@ -94,6 +121,11 @@ void TranSetBase::insert(const string &item_name)
 	items.insert(item_name);
 }
 
+/**
+ * @brief Print.
+ *
+ * @param os Description.
+ */
 void TranSetBase::print(ostream &os) const
 {
 	os << "Transformation name = " << name << "; (type=TranSetBase)" << endl;
@@ -103,6 +135,13 @@ void TranSetBase::print(ostream &os) const
 	}
 }
 
+/**
+ * @brief Has value.
+ *
+ * @param name Description.
+ *
+ * @return Description.
+ */
 bool TranSetBase::has_value(const string &name) const
 {
 	bool ret_val = false;
@@ -129,6 +168,11 @@ void TranOffset::forward(Transformable &data)
 	}
 }
 
+/**
+ * @brief Reverse.
+ *
+ * @param data Description.
+ */
 void TranOffset::reverse(Transformable &data)
 {
 	Transformable::iterator data_iter, data_end = data.end();
@@ -142,18 +186,34 @@ void TranOffset::reverse(Transformable &data)
 	}
 }
 
+/**
+ * @brief Jacobian forward.
+ *
+ * @param jac Description.
+ */
 void TranOffset::jacobian_forward(Jacobian &jac)
 {
 	Transformable &data = jac.base_numeric_parameters;
 	forward(data);
 }
 
+/**
+ * @brief Jacobian reverse.
+ *
+ * @param jac Description.
+ */
 void TranOffset::jacobian_reverse(Jacobian &jac)
 {
 	Transformable &data = jac.base_numeric_parameters;
 	reverse(data);
 }
 
+/**
+ * @brief D2 to d1.
+ *
+ * @param del_data Description.
+ * @param data Description.
+ */
 void TranOffset::d2_to_d1(Transformable &del_data, Transformable &data)
 {
 	// Offset transformation does not affect derivatives.
@@ -161,6 +221,12 @@ void TranOffset::d2_to_d1(Transformable &del_data, Transformable &data)
 	reverse(data);
 }
 
+/**
+ * @brief D1 to d2.
+ *
+ * @param del_data Description.
+ * @param data Description.
+ */
 void TranOffset::d1_to_d2(Transformable &del_data, Transformable &data)
 {
 	// Offset transformation does not affect derivatives.
@@ -168,6 +234,11 @@ void TranOffset::d1_to_d2(Transformable &del_data, Transformable &data)
 	forward(data);
 }
 
+/**
+ * @brief Print.
+ *
+ * @param os Description.
+ */
 void TranOffset::print(ostream &os) const
 {
 	os << "Transformation name = " << name << "; (type=TranOffset)" << endl;
@@ -192,6 +263,11 @@ void TranScale::forward(Transformable &data)
 }
 
 
+/**
+ * @brief Reverse.
+ *
+ * @param data Description.
+ */
 void TranScale::reverse(Transformable &data)
 {
 	Transformable::iterator data_iter, data_end = data.end();
@@ -205,6 +281,11 @@ void TranScale::reverse(Transformable &data)
 	}
 }
 
+/**
+ * @brief Jacobian forward.
+ *
+ * @param jac Description.
+ */
 void TranScale::jacobian_forward(Jacobian &jac)
 {
 	size_t icol = 0;
@@ -225,6 +306,11 @@ void TranScale::jacobian_forward(Jacobian &jac)
 	forward(data);
 }
 
+/**
+ * @brief Jacobian reverse.
+ *
+ * @param jac Description.
+ */
 void TranScale::jacobian_reverse(Jacobian &jac)
 {
 	size_t icol = 0;
@@ -245,6 +331,12 @@ void TranScale::jacobian_reverse(Jacobian &jac)
 	reverse(data);
 }
 
+/**
+ * @brief D1 to d2.
+ *
+ * @param del_data Description.
+ * @param data Description.
+ */
 void TranScale::d1_to_d2(Transformable &del_data, Transformable &data)
 {
 	Transformable::iterator del_data_iter, del_data_end = del_data.end();
@@ -259,6 +351,12 @@ void TranScale::d1_to_d2(Transformable &del_data, Transformable &data)
 	forward(data);
 }
 
+/**
+ * @brief D2 to d1.
+ *
+ * @param del_data Description.
+ * @param data Description.
+ */
 void TranScale::d2_to_d1(Transformable &del_data, Transformable &data)
 {
 	Transformable::iterator del_data_iter, del_data_end = del_data.end();
@@ -273,6 +371,11 @@ void TranScale::d2_to_d1(Transformable &del_data, Transformable &data)
 	reverse(data);
 }
 
+/**
+ * @brief Print.
+ *
+ * @param os Description.
+ */
 void TranScale::print(ostream &os) const
 {
 	os << "Transformation name = " << name << "; (type=TranScale)" << endl;
@@ -296,6 +399,11 @@ void TranLog10::forward(Transformable &data)
 	}
 }
 
+/**
+ * @brief Reverse.
+ *
+ * @param data Description.
+ */
 void TranLog10::reverse(Transformable &data)
 {
 	Transformable::iterator data_iter, data_end = data.end();
@@ -311,6 +419,11 @@ void TranLog10::reverse(Transformable &data)
 
 
 
+/**
+ * @brief Jacobian forward.
+ *
+ * @param jac Description.
+ */
 void TranLog10::jacobian_forward(Jacobian &jac)
 {
 	size_t icol = 0;
@@ -333,6 +446,11 @@ void TranLog10::jacobian_forward(Jacobian &jac)
 	}
 }
 
+/**
+ * @brief Jacobian reverse.
+ *
+ * @param jac Description.
+ */
 void TranLog10::jacobian_reverse(Jacobian &jac)
 {
 	size_t icol = 0;
@@ -356,6 +474,12 @@ void TranLog10::jacobian_reverse(Jacobian &jac)
 }
 
 
+/**
+ * @brief D1 to d2.
+ *
+ * @param del_data Description.
+ * @param data Description.
+ */
 void TranLog10::d1_to_d2(Transformable &del_data, Transformable &data)
 {
 	forward(data);
@@ -372,6 +496,12 @@ void TranLog10::d1_to_d2(Transformable &del_data, Transformable &data)
 	}
 }
 
+/**
+ * @brief D2 to d1.
+ *
+ * @param del_data Description.
+ * @param data Description.
+ */
 void TranLog10::d2_to_d1(Transformable &del_data, Transformable &data)
 {
 	reverse(data);
@@ -389,6 +519,11 @@ void TranLog10::d2_to_d1(Transformable &del_data, Transformable &data)
 	reverse(data);
 }
 
+/**
+ * @brief Print.
+ *
+ * @param os Description.
+ */
 void TranLog10::print(ostream &os) const
 {
 	os << "Transformation name = " << name << "; (type=TranLog10)" << endl;
@@ -407,6 +542,11 @@ void TranFixed::forward(Transformable &data)
 	}
 }
 
+/**
+ * @brief Reverse.
+ *
+ * @param data Description.
+ */
 void TranFixed::reverse(Transformable &data)
 {
 	for (map<string,double>::iterator b=items.begin(), e=items.end(); b!=e; ++b)
@@ -416,6 +556,11 @@ void TranFixed::reverse(Transformable &data)
 }
 
 
+/**
+ * @brief Jacobian forward.
+ *
+ * @param jac Description.
+ */
 void TranFixed::jacobian_forward(Jacobian &jac)
 {
 	Transformable &data = jac.base_numeric_parameters;
@@ -429,6 +574,11 @@ void TranFixed::jacobian_forward(Jacobian &jac)
 	forward(data);
 }
 
+/**
+ * @brief Jacobian reverse.
+ *
+ * @param jac Description.
+ */
 void TranFixed::jacobian_reverse(Jacobian &jac)
 {
 	Transformable &data = jac.base_numeric_parameters;
@@ -443,6 +593,12 @@ void TranFixed::jacobian_reverse(Jacobian &jac)
 
 
 
+/**
+ * @brief D1 to d2.
+ *
+ * @param del_data Description.
+ * @param data Description.
+ */
 void TranFixed::d1_to_d2(Transformable &del_data, Transformable &data)
 {
 	for (map<string, double>::iterator b = items.begin(), e = items.end(); b != e; ++b)
@@ -452,6 +608,12 @@ void TranFixed::d1_to_d2(Transformable &del_data, Transformable &data)
 	forward(data);
 }
 
+/**
+ * @brief D2 to d1.
+ *
+ * @param del_data Description.
+ * @param data Description.
+ */
 void TranFixed::d2_to_d1(Transformable &del_data, Transformable &data)
 {
 	for (map<string, double>::iterator b = items.begin(), e = items.end(); b != e; ++b)
@@ -462,6 +624,11 @@ void TranFixed::d2_to_d1(Transformable &del_data, Transformable &data)
 }
 
 
+/**
+ * @brief Print.
+ *
+ * @param os Description.
+ */
 void TranFixed::print(ostream &os) const
 {
 	os << "Transformation name = " << name << "; (type=TranFixed)" << endl;
@@ -471,6 +638,11 @@ void TranFixed::print(ostream &os) const
 	}
 }
 
+/**
+ * @brief Print.
+ *
+ * @param os Description.
+ */
 void TranFrozen::print(ostream &os) const
 {
 	os << "Transformation name = " << name << "; (type=TranFrozen)" << endl;
@@ -480,12 +652,23 @@ void TranFrozen::print(ostream &os) const
 	}
 }
 
+/**
+ * @brief Insert.
+ *
+ * @param item_name Description.
+ * @param item_value Description.
+ */
 void TranTied::insert(const string &item_name, const pair<string, double> &item_value)
 {
 	items[item_name] = item_value;
 }
 
 
+/**
+ * @brief Forward.
+ *
+ * @param data Description.
+ */
 void TranTied::forward(Transformable &data)
 {
 	for (map<string, pair_string_double>::iterator ii = items.begin(); ii != items.end(); ++ii)
@@ -495,6 +678,11 @@ void TranTied::forward(Transformable &data)
 }
 
 
+/**
+ * @brief Reverse.
+ *
+ * @param data Description.
+ */
 void TranTied::reverse(Transformable &data)
 {
 	string const *base_name;
@@ -517,6 +705,11 @@ void TranTied::reverse(Transformable &data)
 	}
 }
 
+/**
+ * @brief Jacobian forward.
+ *
+ * @param jac Description.
+ */
 void TranTied::jacobian_forward(Jacobian &jac)
 {
 	throw(PestError("Error: TranTied::jacobian_forward - TranTied does not support Jacobian transformations"));
@@ -524,21 +717,43 @@ void TranTied::jacobian_forward(Jacobian &jac)
 
 
 
+/**
+ * @brief Jacobian reverse.
+ *
+ * @param jac Description.
+ */
 void TranTied::jacobian_reverse(Jacobian &jac)
 {
 	throw(PestError("Error: TranTied::jacobian_forward - TranTied does not support Jacobian transformations"));
 }
 
+/**
+ * @brief D1 to d2.
+ *
+ * @param del_data Description.
+ * @param data Description.
+ */
 void TranTied::d1_to_d2(Transformable &del_data, Transformable &data)
 {
 	throw(PestError("Error: TranTied::d1_to_d2 - TranTied does not support d1_to_d2 transformations"));
 }
 
+/**
+ * @brief D2 to d1.
+ *
+ * @param del_data Description.
+ * @param data Description.
+ */
 void TranTied::d2_to_d1(Transformable &del_data, Transformable &data)
 {
 	throw(PestError("Error: TranTied::d2_to_d1 - TranTied does not support d2_to_d1 transformations"));
 }
 
+/**
+ * @brief Print.
+ *
+ * @param os Description.
+ */
 void TranTied::print(ostream &os) const
 {
 	os << "Transformation name = " << name << "; (type=TranTied)" << endl;
