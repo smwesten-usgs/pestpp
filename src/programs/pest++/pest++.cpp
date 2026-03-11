@@ -16,6 +16,11 @@
 	You should have received a copy of the GNU General Public License
 	along with PEST++.  If not, see<http://www.gnu.org/licenses/>.
 */
+/**
+ * @file pest++.cpp
+ * @brief Implementation of pest++.
+ */
+
 #include "RunManagerPanther.h" //needs to be first because it includes winsock2.h
 //#include <vld.h> // Memory Leak Detection using "Visual Leak Detector"
 #include <iostream>
@@ -59,6 +64,14 @@ using namespace pest_utils;
 
 //using namespace pest_utils;
 
+/**
+ * @brief Main.
+ *
+ * @param argc Description.
+ * @param argv Description.
+ *
+ * @return Description.
+ */
 int main(int argc, char* argv[]) {
 #ifndef _DEBUG
 	try {
@@ -305,7 +318,8 @@ int main(int argc, char* argv[]) {
                     vector<string>{}, vector<string>{},
                     pest_scenario.get_pestpp_options().get_panther_timeout_milliseconds(),
                     pest_scenario.get_pestpp_options().get_panther_echo_interval_milliseconds(),
-                    pest_scenario.get_pestpp_options().get_panther_persistent_workers());
+                    pest_scenario.get_pestpp_options().get_panther_persistent_workers(),
+					pest_scenario.get_pestpp_options().get_panther_ping_interval_secs());
 			}
 		}
 		

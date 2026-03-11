@@ -1,3 +1,7 @@
+/**
+ * @file utilities.cpp
+ * @brief Implementation of utilities.
+ */
 #include <stdio.h>
 #include <string>
 #include <cctype>
@@ -29,6 +33,14 @@
 
 using namespace std;
 
+/**
+ * @brief Overloaded operator << operator.
+ *
+ * @param os Description.
+ * @param val Description.
+ *
+ * @return Description.
+ */
 std::ostream& operator<< (std::ostream &os, const std::set<std::string> val)
 {
 	for (const auto &i : val)
@@ -38,6 +50,14 @@ std::ostream& operator<< (std::ostream &os, const std::set<std::string> val)
 	return os;
 }
 
+/**
+ * @brief Overloaded operator << operator.
+ *
+ * @param os Description.
+ * @param val Description.
+ *
+ * @return Description.
+ */
 std::ostream& operator<< (std::ostream &os, const std::vector<std::string> val)
 {
 	for (const auto &i : val)
@@ -47,6 +67,13 @@ std::ostream& operator<< (std::ostream &os, const std::vector<std::string> val)
 	return os;
 }
 
+/**
+ * @brief Print.
+ *
+ * @param val Description.
+ * @param os Description.
+ * @param indent Description.
+ */
 void print(std::set<std::string> val, std::ostream &os, int indent)
 {
 	string space(indent, ' ');

@@ -372,7 +372,7 @@ public:
 	void message(int level, const string& _message);
 	//template<typename T>
 	//void message(int level, const string& _message, T extra);
-	void message(int level, const string& _message, string extra);
+	void message(int level, const string& _message, string extra, bool echo = true);
 	void message(int level, const string& _message, int extra);
 	void message(int level, const string& _message, double extra);
 	void message(int level, const string& _message, size_t extra);

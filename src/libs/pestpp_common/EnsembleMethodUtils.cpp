@@ -1,3 +1,7 @@
+/**
+ * @file EnsembleMethodUtils.cpp
+ * @brief Implementation of EnsembleMethodUtils.
+ */
 #include <random>
 #include <map>
 #include <iomanip>
@@ -235,6 +239,11 @@ void MmNeighborThread::work(int tid, int verbose_level, double mm_alpha, map<str
 }
 
 
+/**
+ * @brief Update multimodal components.
+ *
+ * @param mm_alpha Description.
+ */
 void EnsembleSolver::update_multimodal_components(const double mm_alpha) {
     mm_real_idx_map.clear();
     mm_q_vec_map.clear();
@@ -4520,12 +4529,12 @@ vector<ObservationEnsemble> EnsembleMethod::run_lambda_ensembles(vector<Paramete
 	ss.str("");
 	for (auto i : pe_subset_idxs)
 		ss << i << ":" << names[i] << ", ";
-	message(1, "subset idx:pe real name: ", ss.str());
+	message(1, "subset idx:pe real name: ", ss.str(), false);
 	ss.str("");
 	names = oe.get_real_names();
 	for (auto i : oe_subset_idxs)
 		ss << i << ":" << names[i] << ", ";
-	message(1, "subset idx:oe real name: ", ss.str());
+	message(1, "subset idx:oe real name: ", ss.str(), false);
 
 	//set_subset_idx(pe_lams[0].shape().first);
 	vector<map<int, int>> real_run_ids_vec;
@@ -7310,8 +7319,13 @@ bool EnsembleMethod::solve(bool use_mda, vector<double> inflation_factors, vecto
 	int best_idx = -1;
 	double best_mean = 1.0e+300, best_std = 1.0e+300; // todo (Ayman): read those from input
 	double mean, std;
-
 	message(0, "running upgrade ensembles");
+	ss.str("");
+	ss << inflation_factors.size() << " inflation factors (lambdas) times " << backtrack_factors.size() << " backtracking factors" << endl;
+	ss << "   times " << subset_idxs.size() << " realizations";
+	ss << " yields " << inflation_factors.size() * backtrack_factors.size() * subset_idxs.size() << " model runs for upgrade testing";
+	message(1,ss.str());
+
 	vector<ObservationEnsemble> oe_lams;
 	
 	//if we are saving upgrades to disk
@@ -8037,12 +8051,12 @@ void EnsembleMethod::message(int level, const string& _message)
 
 //template<typename T>
 
-void EnsembleMethod::message(int level, const string& _message, string extra)
+void EnsembleMethod::message(int level, const string& _message, string extra, bool echo)
 {
 	stringstream ss;
 	ss << _message << " " << extra;
 	string s = ss.str();
-	message(level, s);
+	message(level, s, echo);
 }
 
 void EnsembleMethod::message(int level, const string& _message, int extra)
