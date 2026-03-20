@@ -731,6 +731,9 @@ public:
     const int get_panther_timeout_milliseconds() const { return panther_timeout_milliseconds;}
     void set_panther_persistent_workers(bool _flag) {panther_persistent_workers = _flag;}
     const bool get_panther_persistent_workers() const {return panther_persistent_workers;}
+	const int get_panther_ping_interval_secs() const { return panther_ping_interval_secs;}
+	void set_panther_ping_interval_secs(int _secs) { panther_ping_interval_secs = _secs;}
+
 
 
 
@@ -1012,6 +1015,7 @@ private:
     int panther_timeout_milliseconds;
     int panther_echo_interval_milliseconds;
     bool panther_persistent_workers;
+	int panther_ping_interval_secs;
 
 };
 //ostream& operator<< (ostream &os, const PestppOptions& val);

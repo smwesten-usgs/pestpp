@@ -1,3 +1,7 @@
+/**
+ * @file sequential_lp.cpp
+ * @brief Implementation of sequential_lp.
+ */
 #include "sequential_lp.h"
 #include "sequential_lp.h"
 #include "Pest.h"
@@ -35,6 +39,9 @@ sequentialLP::sequentialLP(Pest &_pest_scenario, RunManagerAbstract* _run_mgr_pt
 
 }
 
+/**
+ * @brief Destructor for .
+ */
 sequentialLP::~sequentialLP()
 {
 	delete[] dec_var_lb;
@@ -45,6 +52,12 @@ sequentialLP::~sequentialLP()
 	//delete[] row_price;
 }
 
+/**
+ * @brief Throw sequential l p error.
+ *
+ * @param message Description.
+ * @param messages Description.
+ */
 void sequentialLP::throw_sequentialLP_error(string message,const vector<string> &messages)
 {
 	stringstream ss;
@@ -53,6 +66,12 @@ void sequentialLP::throw_sequentialLP_error(string message,const vector<string> 
 	throw_sequentialLP_error(message + ss.str());
 }
 
+/**
+ * @brief Throw sequential l p error.
+ *
+ * @param message Description.
+ * @param messages Description.
+ */
 void sequentialLP::throw_sequentialLP_error(string message, const set<string> &messages)
 {
 	stringstream ss;
@@ -61,6 +80,11 @@ void sequentialLP::throw_sequentialLP_error(string message, const set<string> &m
 	throw_sequentialLP_error(message + ss.str());
 }
 
+/**
+ * @brief Throw sequential l p error.
+ *
+ * @param message Description.
+ */
 void sequentialLP::throw_sequentialLP_error(string message)
 {
 	string error_message = "error in sequentialLP process: " + message;
@@ -70,6 +94,9 @@ void sequentialLP::throw_sequentialLP_error(string message)
 	throw runtime_error(error_message);
 }
 
+/**
+ * @brief Initial report.
+ */
 void sequentialLP::initial_report()
 {
 	ofstream &f_rec = file_mgr_ptr->rec_ofstream();
@@ -164,6 +191,13 @@ void sequentialLP::initial_report()
 //
 //}
 
+/**
+ * @brief Get out of bounds dec vars.
+ *
+ * @param upgrade_pars Description.
+ *
+ * @return Description.
+ */
 map<string,double> sequentialLP::get_out_of_bounds_dec_vars(Parameters &upgrade_pars)
 {
 	double opt_tol = pest_scenario.get_pestpp_options().get_opt_iter_tol();
@@ -183,6 +217,13 @@ map<string,double> sequentialLP::get_out_of_bounds_dec_vars(Parameters &upgrade_
 	return invalid_dec_vars;
 }
 
+/**
+ * @brief Postsolve decision var report.
+ *
+ * @param upgrade_pars Description.
+ *
+ * @return Description.
+ */
 pair<double,double> sequentialLP::postsolve_decision_var_report(Parameters &upgrade_pars)
 {
     int width = 12;
@@ -232,6 +273,9 @@ pair<double,double> sequentialLP::postsolve_decision_var_report(Parameters &upgr
 	return pair<double,double>(cur_obj,new_obj);
 }
 
+/**
+ * @brief Initialize and check.
+ */
 void sequentialLP::initialize_and_check()
 {
 	ofstream &f_rec = file_mgr_ptr->rec_ofstream();
@@ -454,6 +498,9 @@ void sequentialLP::initialize_and_check()
 	return;
 }
 
+/**
+ * @brief Build obj func coef array.
+ */
 void sequentialLP::build_obj_func_coef_array()
 {
 	ctl_ord_obj_func_coefs = new double[num_dec_vars()];
@@ -472,6 +519,9 @@ void sequentialLP::build_obj_func_coef_array()
 	return;
 }
 
+/**
+ * @brief Iter infeasible report.
+ */
 void sequentialLP::iter_infeasible_report()
 {
 	ofstream &f_rec = file_mgr_ptr->rec_ofstream();
@@ -499,6 +549,9 @@ void sequentialLP::iter_infeasible_report()
 	return;
 }
 
+/**
+ * @brief Build dec var bounds.
+ */
 void sequentialLP::build_dec_var_bounds()
 {
 	//set the decision var lower and upper bound arrays
@@ -513,6 +566,9 @@ void sequentialLP::build_dec_var_bounds()
 	}
 }
 
+/**
+ * @brief Iter solve.
+ */
 void sequentialLP::iter_solve()
 {
 
@@ -628,6 +684,11 @@ void sequentialLP::iter_solve()
 	return;
 }
 
+/**
+ * @brief Jacobian to coinpackedmatrix.
+ *
+ * @return Description.
+ */
 CoinPackedMatrix sequentialLP::jacobian_to_coinpackedmatrix()
 {
     set<string> se_names(ext_dv_names.begin(),ext_dv_names.end());
@@ -713,6 +774,9 @@ CoinPackedMatrix sequentialLP::jacobian_to_coinpackedmatrix()
 	return matrix;
 }
 
+/**
+ * @brief Solve.
+ */
 void sequentialLP::solve()
 {
 	ofstream &f_rec = file_mgr_ptr->rec_ofstream();
@@ -783,6 +847,9 @@ void sequentialLP::solve()
 }
 
 
+/**
+ * @brief Iter postsolve.
+ */
 void sequentialLP::iter_postsolve()
 {
 	ofstream &f_rec = file_mgr_ptr->rec_ofstream();
@@ -1020,6 +1087,14 @@ void sequentialLP::iter_postsolve()
 	return;
 }
 
+/**
+ * @brief Make upgrade run.
+ *
+ * @param upgrade_pars Description.
+ * @param upgrade_obs Description.
+ *
+ * @return Description.
+ */
 bool sequentialLP::make_upgrade_run(Parameters &upgrade_pars, Observations &upgrade_obs)
 {
 
@@ -1033,6 +1108,9 @@ bool sequentialLP::make_upgrade_run(Parameters &upgrade_pars, Observations &upgr
 }
 
 
+/**
+ * @brief Iter presolve.
+ */
 void sequentialLP::iter_presolve()
 {
 	ofstream &f_rec = file_mgr_ptr->rec_ofstream();

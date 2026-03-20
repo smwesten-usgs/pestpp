@@ -1403,6 +1403,7 @@ def fr_timeout_test():
     pst.pestpp_options["ies_num_reals"] = 10
     pst.pestpp_options["ies_include_base"] = False
     pst.pestpp_options["max_run_fail"] = 1
+    pst.pestpp_options["panther_ping_interval_secs"] = 2
 
     #pst.pestpp_options["panther_transfer_on_fail"] = "10par_xsec.list"
     pst.pestpp_options["panther_agent_freeze_on_fail"] = False

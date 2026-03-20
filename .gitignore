@@ -77,3 +77,8 @@ pest++/sweep/sweep
 
 /dev_tests
 /benchmarks/g07
+
+# Sphinx / Doxygen docs build artifacts
+docs/_build/
+docs/_doxygen/
+docs/_manual_assets/
