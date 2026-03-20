@@ -2025,6 +2025,7 @@ def tenpar_adjust_weights_test():
     obs.loc[:,"standard_deviation"] = 0.1
     obs.loc[pst.obs_names[12:],"standard_deviation"] = 1e-11
     obs.loc[pst.obs_names[12:],"obsval"] = 1e-9
+    #these values are hard coded later...
     with open(os.path.join(template_d,"phi.csv"),'w') as f:
         f.write("og1,0.333333\n")
         f.write("og3,0.333333\n")
@@ -2043,6 +2044,29 @@ def tenpar_adjust_weights_test():
     
     pst.pestpp_options['ies_verbose_level'] = 4
     pst.pestpp_options["ies_bad_phi_sigma"] = -1.5
+
+    pst.control_data.noptmax = 0
+    pst.pestpp_options["ies_drop_conflicts"] = False
+    pst.pestpp_options["ies_phi_factor_file"] = "phi.csv"
+    pst_name = "pest_adj.pst"
+    pst.write(os.path.join(template_d,pst_name),version=2)
+    if os.path.exists(test_d):
+        shutil.rmtree(test_d)
+    shutil.copytree(template_d, test_d)
+    pyemu.os_utils.run("{0} {1}".format(exe_path, pst_name), cwd=test_d)
+    pst.set_res(os.path.join(test_d,pst_name.replace(".pst",".base.rei")))
+    print(pst.phi_components)
+    obs = pst.observation_data
+    aobs = pd.read_csv(os.path.join(test_d,pst_name.replace(".pst",".0.adjusted.obs_data.csv")),index_col=0)
+    obs.loc[aobs.index,"weight"] = aobs.weight.values
+    print(pst.phi_components)
+    print(pst.phi_components_normalized)
+    pcn = pst.phi_components_normalized
+    assert np.isclose(pcn["og3blahblah"],0.33333,1e-3)
+    assert np.isclose(pcn["og4yadayada"],0.33333,1e-3)
+    
+
+    pst.pestpp_options.pop("ies_phi_factor_file")
 
     
     pst.control_data.noptmax = 2
@@ -5011,6 +5035,7 @@ def large_invest():
 
 
 if __name__ == "__main__":
+    tenpar_adjust_weights_test()
     #large_invest()
     #tenpar_fixed_transform_test()
     #tenpar_reg_factor_test()
@@ -5031,7 +5056,7 @@ if __name__ == "__main__":
     #tenpar_reg_factor_test()
     #tenpar_high_phi_test()
     #tenpar_iqr_bad_phi_sigma_test()
-    multimodal_test()
+    #multimodal_test()
     #plot_mm1_sweep_results()
     #plot_mm1_results()
     #plot_mm1_results_seq()

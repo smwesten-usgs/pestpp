@@ -4874,6 +4874,25 @@ void EnsembleMethod::initialize(int cycle, bool run, bool use_existing)
 		_oe.append(BASE_REAL_NAME, pest_scenario.get_ctl_observations());
 		oe_base = _oe;
 		oe_base.reorder(vector<string>(), act_obs_names);
+
+		ObservationEnsemble _weights(&pest_scenario, &rand_gen);
+		_weights.reserve(vector<string>(), pest_scenario.get_ctl_ordered_nz_obs_names());
+		ObservationInfo* oi = pest_scenario.get_observation_info_ptr();
+		vector<string> names = _weights.get_var_names();
+		Eigen::VectorXd wvec(_weights.shape().second);
+		for (int i=0;i<wvec.size();i++) {
+			wvec[i] = oi->get_weight(names[i]);
+		}
+		_weights.append(BASE_REAL_NAME, wvec);
+		wvec.resize(0);
+		names.clear();
+
+		oe_base = _oe;
+		oe_base.reorder(vector<string>(), act_obs_names);
+
+		weights = _weights;
+		weights_base = _weights;
+
 		initialize_parcov();
 		//initialize the phi handler
 		ph = L2PhiHandler(&pest_scenario, &file_manager, &oe_base, &pe_base, &parcov);
@@ -4950,10 +4969,27 @@ void EnsembleMethod::initialize(int cycle, bool run, bool use_existing)
 		message(0, "control file parameter phi report:");
 		ph.report(true);
 		ph.write(0, 1);
+
 		save_real_par_rei(pest_scenario, _pe, _oe, output_file_writer, file_manager, -1, BASE_REAL_NAME, cycle);
 		//transfer_dynamic_state_from_oe_to_initial_pe(_pe, _oe);
 		pe = _pe;
 		oe = _oe;
+		if (phi_fracs_by_real.size() == 1) {
+			message(1,"attempting weight adjustment");
+			adjust_weights(true);
+			/*try {
+				adjust_weights(true);
+			}
+			catch(...) {
+				message(1,"failed to adjust weights");
+			}*/
+			ph.update(_oe, _pe);
+			message(0, "control file parameter adjusted-weights phi report:");
+			ph.report(true);
+			ph.write(0, 1);
+		}
+
+
 
 		return;
 	}
