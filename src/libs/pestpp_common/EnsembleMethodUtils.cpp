@@ -4977,12 +4977,7 @@ void EnsembleMethod::initialize(int cycle, bool run, bool use_existing)
 		if (phi_fracs_by_real.size() == 1) {
 			message(1,"attempting weight adjustment");
 			adjust_weights(true);
-			/*try {
-				adjust_weights(true);
-			}
-			catch(...) {
-				message(1,"failed to adjust weights");
-			}*/
+
 			ph.update(_oe, _pe);
 			message(0, "control file parameter adjusted-weights phi report:");
 			ph.report(true);

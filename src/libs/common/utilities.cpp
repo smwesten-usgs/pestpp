@@ -96,6 +96,44 @@ double get_duration_sec(std::chrono::system_clock::time_point start_time)
 	return (double)std::chrono::duration_cast<std::chrono::milliseconds>(dt).count() / 1000.0;
 }
 
+std::vector<std::string> tokenize_w_quotes(const std::string& input) {
+      std::vector<std::string> tokens;
+      std::string current;
+      bool in_quotes = false;
+      char quote_char = 0;
+
+      for (size_t i = 0; i < input.size(); ++i) {
+          char c = input[i];
+
+          if (in_quotes) {
+              if (c == quote_char) {
+                  in_quotes = false;
+              } else {
+                  current += c;
+              }
+          } else if (c == '"' || c == '\'') {
+              in_quotes = true;
+              quote_char = c;
+          } else if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+              if (!current.empty()) {
+                  tokens.push_back(current);
+                  current.clear();
+              }
+          } else {
+              current += c;
+          }
+      }
+
+      if (in_quotes) {
+          throw std::runtime_error("unterminated quoted string: '"+input+"' ");
+      }
+      if (!current.empty()) {
+          tokens.push_back(current);
+      }
+
+      return tokens;
+  }
+
 template < class ContainerT >
 void tokenize(const std::string& str, ContainerT& tokens, const std::string& delimiters, const bool trimEmpty)
 {
