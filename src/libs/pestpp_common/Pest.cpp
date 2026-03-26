@@ -569,6 +569,7 @@ int Pest::process_ctl_file(ifstream& fin, string _pst_filename, ofstream& f_rec)
 	int sec_begin_lnum, sec_lnum;
 	double value;
 	string name;
+	string quote_striped_line;
 	string* trans_type;
 	pair<string, string> pi_name_group;
 	int lnum;
@@ -635,13 +636,20 @@ int Pest::process_ctl_file(ifstream& fin, string _pst_filename, ofstream& f_rec)
 				ss.str("");
 				ss << "Note: single and/or double quote char(s) found on line :" << line << endl;
 				f_rec << ss.str();
-				tokens = tokenize_w_quotes(line);
+				tokens = tokenize_w_quotes(line_upper);
 				tokens_case_sen = tokenize_w_quotes(line);
+				ss.str("");
+				for (auto& t : tokens_case_sen) {
+					ss << t << ' ';
+				}
+				quote_striped_line = ss.str();
+
 			}
 
 			else {
 				tokenize(line_upper, tokens);
 				tokenize(line, tokens_case_sen);
+				quote_striped_line = line;
 
 			}
 			sec_lnum = lnum - sec_begin_lnum;
@@ -1130,7 +1138,7 @@ int Pest::process_ctl_file(ifstream& fin, string _pst_filename, ofstream& f_rec)
 
 		
 			else if (section == "MODEL COMMAND LINE") {
-				model_exec_info.comline_vec.push_back(line);
+				model_exec_info.comline_vec.push_back(quote_striped_line);
 			}
 			else if (section == "MODEL INPUT")
 			{
