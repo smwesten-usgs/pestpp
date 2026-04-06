@@ -5031,11 +5031,48 @@ def large_invest():
     pyemu.os_utils.run("{0} pest.pst /e".format(exe_path),cwd=t_d)
 
 
+def tenpar_xsec_combined_autoadaloc_mm_stress_test():
+    """testing combined matrix + autoadaloc"""
+    model_d = "ies_10par_xsec"
+    test_d = os.path.join(model_d, "master_comb_aal_test1")
+    template_d = os.path.join(model_d, "test_template")
 
+    if not os.path.exists(template_d):
+        raise Exception("template_d {0} not found".format(template_d))
+    pst_name = os.path.join(template_d, "pest.pst")
+    pst = pyemu.Pst(pst_name)
 
+    if os.path.exists(test_d):
+        shutil.rmtree(test_d)
+    shutil.copytree(template_d, test_d)
+    pst.pestpp_options = {}
+    pst.pestpp_options["ies_num_reals"] = 30
+    
+    mat = pyemu.Matrix.from_names(pst.nnz_obs_names, pst.adj_par_names).to_dataframe()
+    mat.loc[:, :] = 1
+    mat.loc[:, pst.adj_par_names[::2]] = 0
+    pyemu.Matrix.from_dataframe(mat).to_ascii(os.path.join(template_d, "loc.mat"))
+
+    pst.pestpp_options["ies_localizer"] = "loc.mat"
+    pst.pestpp_options["ies_autoadaloc"] = True
+    pst.pestpp_options["ies_verbose_level"] = 3
+    pst.pestpp_options["ies_debug_fail_remainder"] = True
+    pst.pestpp_options["ies_debug_fail_subset"] = True
+    pst.pestpp_options["ies_debug_bad_phi"] = True
+    pst.pestpp_options["ies_multimodal_alpha"] = 0.99
+    
+    pst.control_data.noptmax = 3
+
+    pst.write(os.path.join(template_d, "pest_aal_restart.pst"))
+    pyemu.os_utils.start_workers(template_d, exe_path, "pest_aal_restart.pst", num_workers=10,
+                                 master_dir=test_d, verbose=True, worker_root=model_d,
+                                 port=port)
+    
 
 if __name__ == "__main__":
-    tenpar_adjust_weights_test()
+    tenpar_xsec_combined_autoadaloc_mm_stress_test()
+
+    #tenpar_adjust_weights_test()
     #large_invest()
     #tenpar_fixed_transform_test()
     #tenpar_reg_factor_test()

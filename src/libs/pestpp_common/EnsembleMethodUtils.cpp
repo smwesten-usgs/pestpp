@@ -297,7 +297,7 @@ void EnsembleSolver::update_multimodal_components(const double mm_alpha) {
 	}
     performance_log->log_event("getting phi vectors for all weights");
     map<string,map<string,double>> weight_phi_map = ph.get_meas_phi_weight_ensemble(oe,weights);
-    //int verbose_level = pest_scenario.get_pestpp_options().get_ies_verbose_level();
+    //int verbose_level = pest_scenario.get_loading par ensemble from binary filepestpp_options().get_ies_verbose_level();
     if (num_threads > 1)
     {
         performance_log->log_event("starting multithreaded MM neighbor calcs");
@@ -321,7 +321,7 @@ void EnsembleSolver::update_multimodal_components(const double mm_alpha) {
             exception_ptrs.push_back(exception_ptr());
         }
         for (int i = 0; i < num_threads; i++) {
-            threads.push_back(thread(mm_neighbor_thread_function, i, verbose_level, mm_alpha, weight_phi_map,preal_names,
+        	threads.push_back(thread(mm_neighbor_thread_function, i, verbose_level, mm_alpha, weight_phi_map,preal_names,
                                      oreal_names, parcov_inv, real_map, std::ref(*ut_ptr), std::ref(exception_ptrs[i])));
         }
 
@@ -1101,6 +1101,7 @@ void EnsembleSolver::solve(int num_threads, double cur_lam, bool use_glm_form, P
 	{
 		//worker.work(0, iter, cur_lam, use_glm_form, act_par_names, act_obs_names);
 		ut_ptr->work(0, iter, cur_lam, use_glm_form, act_par_names, act_obs_names);
+		delete ut_ptr;
 	}
 	else
 	{
@@ -8087,7 +8088,7 @@ void EnsembleMethod::message(int level, const string& _message, string extra, bo
 	stringstream ss;
 	ss << _message << " " << extra;
 	string s = ss.str();
-	message(level, s, echo);
+	message(level, s, vector<string>(),echo);
 }
 
 void EnsembleMethod::message(int level, const string& _message, int extra)
@@ -8205,12 +8206,12 @@ bool EnsembleMethod::initialize_pe(Covariance& cov)
 			}
 			catch (const exception& e)
 			{
-				ss << "error processing par jcb: " << e.what();
+				ss << "error processing par binary file: " << e.what();
 				throw_em_error(ss.str());
 			}
 			catch (...)
 			{
-				throw_em_error(string("error processing par jcb"));
+				throw_em_error(string("error processing par binary file"));
 			}
 		}
 		else
