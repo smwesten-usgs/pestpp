@@ -96,6 +96,45 @@ double get_duration_sec(std::chrono::system_clock::time_point start_time)
 	return (double)std::chrono::duration_cast<std::chrono::milliseconds>(dt).count() / 1000.0;
 }
 
+// Split `input` on whitespace into tokens.  Single and double quotes may be
+// nested inside each other; all quote characters (at every nesting level) are
+// stripped from the output.  Empty and whitespace-only tokens are omitted.
+// Throws std::runtime_error if a quoted section is never closed.
+std::vector<std::string> tokenize_w_quotes(const std::string& input) {
+    std::vector<std::string> tokens;
+    std::string current;
+    std::vector<char> quote_stack; // innermost open-quote char at back
+
+    for (char c : input) {
+        if (!quote_stack.empty() && c == quote_stack.back()) {
+            // Closing quote matches the innermost open quote — pop it.
+            // The quote character itself is not copied into the token.
+            quote_stack.pop_back();
+        } else if (c == '"' || c == '\'') {
+            // Opening quote (or an inner quote of the other type) — push it.
+            // The quote character itself is not copied into the token.
+            quote_stack.push_back(c);
+        } else if (quote_stack.empty() && (c == ' ' || c == '\t' || c == '\n' || c == '\r')) {
+            // Whitespace outside all quotes — flush non-empty token.
+            if (!current.empty()) {
+                tokens.push_back(current);
+                current.clear();
+            }
+        } else {
+            current += c;
+        }
+    }
+
+    if (!quote_stack.empty()) {
+        throw std::runtime_error("unterminated quoted string: '" + input + "'");
+    }
+    if (!current.empty()) {
+        tokens.push_back(current);
+    }
+
+    return tokens;
+}
+
 template < class ContainerT >
 void tokenize(const std::string& str, ContainerT& tokens, const std::string& delimiters, const bool trimEmpty)
 {

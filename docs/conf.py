@@ -40,7 +40,7 @@ html_logo = None
 html_extra_path = ["_manual_assets"]
 
 # -- MyST (Markdown support) -------------------------------------------------
-myst_enable_extensions = ["colon_fence"]
+myst_enable_extensions = ["colon_fence", "html_image"]
 source_suffix = {
     ".rst": "restructuredtext",
     ".md": "markdown",

@@ -82,3 +82,4 @@ pest++/sweep/sweep
 docs/_build/
 docs/_doxygen/
 docs/_manual_assets/
+docs/users_manual_processed.md

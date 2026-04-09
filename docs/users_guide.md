@@ -1,4 +1,4 @@
 # Users Guide
 
-```{include} ../documentation/pestpp_users_manual.md
+```{include} users_manual_processed.md
 ```
