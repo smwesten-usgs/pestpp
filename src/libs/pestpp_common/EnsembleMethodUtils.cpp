@@ -1,3 +1,7 @@
+/**
+ * @file EnsembleMethodUtils.cpp
+ * @brief Implementation of EnsembleMethodUtils.
+ */
 #include <random>
 #include <map>
 #include <iomanip>
@@ -235,6 +239,11 @@ void MmNeighborThread::work(int tid, int verbose_level, double mm_alpha, map<str
 }
 
 
+/**
+ * @brief Update multimodal components.
+ *
+ * @param mm_alpha Description.
+ */
 void EnsembleSolver::update_multimodal_components(const double mm_alpha) {
     mm_real_idx_map.clear();
     mm_q_vec_map.clear();
@@ -288,7 +297,7 @@ void EnsembleSolver::update_multimodal_components(const double mm_alpha) {
 	}
     performance_log->log_event("getting phi vectors for all weights");
     map<string,map<string,double>> weight_phi_map = ph.get_meas_phi_weight_ensemble(oe,weights);
-    //int verbose_level = pest_scenario.get_pestpp_options().get_ies_verbose_level();
+    //int verbose_level = pest_scenario.get_loading par ensemble from binary filepestpp_options().get_ies_verbose_level();
     if (num_threads > 1)
     {
         performance_log->log_event("starting multithreaded MM neighbor calcs");
@@ -312,7 +321,7 @@ void EnsembleSolver::update_multimodal_components(const double mm_alpha) {
             exception_ptrs.push_back(exception_ptr());
         }
         for (int i = 0; i < num_threads; i++) {
-            threads.push_back(thread(mm_neighbor_thread_function, i, verbose_level, mm_alpha, weight_phi_map,preal_names,
+        	threads.push_back(thread(mm_neighbor_thread_function, i, verbose_level, mm_alpha, weight_phi_map,preal_names,
                                      oreal_names, parcov_inv, real_map, std::ref(*ut_ptr), std::ref(exception_ptrs[i])));
         }
 
@@ -1092,6 +1101,7 @@ void EnsembleSolver::solve(int num_threads, double cur_lam, bool use_glm_form, P
 	{
 		//worker.work(0, iter, cur_lam, use_glm_form, act_par_names, act_obs_names);
 		ut_ptr->work(0, iter, cur_lam, use_glm_form, act_par_names, act_obs_names);
+		delete ut_ptr;
 	}
 	else
 	{
@@ -4520,12 +4530,12 @@ vector<ObservationEnsemble> EnsembleMethod::run_lambda_ensembles(vector<Paramete
 	ss.str("");
 	for (auto i : pe_subset_idxs)
 		ss << i << ":" << names[i] << ", ";
-	message(1, "subset idx:pe real name: ", ss.str());
+	message(1, "subset idx:pe real name: ", ss.str(), false);
 	ss.str("");
 	names = oe.get_real_names();
 	for (auto i : oe_subset_idxs)
 		ss << i << ":" << names[i] << ", ";
-	message(1, "subset idx:oe real name: ", ss.str());
+	message(1, "subset idx:oe real name: ", ss.str(), false);
 
 	//set_subset_idx(pe_lams[0].shape().first);
 	vector<map<int, int>> real_run_ids_vec;
@@ -4865,6 +4875,25 @@ void EnsembleMethod::initialize(int cycle, bool run, bool use_existing)
 		_oe.append(BASE_REAL_NAME, pest_scenario.get_ctl_observations());
 		oe_base = _oe;
 		oe_base.reorder(vector<string>(), act_obs_names);
+
+		ObservationEnsemble _weights(&pest_scenario, &rand_gen);
+		_weights.reserve(vector<string>(), pest_scenario.get_ctl_ordered_nz_obs_names());
+		ObservationInfo* oi = pest_scenario.get_observation_info_ptr();
+		vector<string> names = _weights.get_var_names();
+		Eigen::VectorXd wvec(_weights.shape().second);
+		for (int i=0;i<wvec.size();i++) {
+			wvec[i] = oi->get_weight(names[i]);
+		}
+		_weights.append(BASE_REAL_NAME, wvec);
+		wvec.resize(0);
+		names.clear();
+
+		oe_base = _oe;
+		oe_base.reorder(vector<string>(), act_obs_names);
+
+		weights = _weights;
+		weights_base = _weights;
+
 		initialize_parcov();
 		//initialize the phi handler
 		ph = L2PhiHandler(&pest_scenario, &file_manager, &oe_base, &pe_base, &parcov);
@@ -4941,10 +4970,22 @@ void EnsembleMethod::initialize(int cycle, bool run, bool use_existing)
 		message(0, "control file parameter phi report:");
 		ph.report(true);
 		ph.write(0, 1);
+
 		save_real_par_rei(pest_scenario, _pe, _oe, output_file_writer, file_manager, -1, BASE_REAL_NAME, cycle);
 		//transfer_dynamic_state_from_oe_to_initial_pe(_pe, _oe);
 		pe = _pe;
 		oe = _oe;
+		if (phi_fracs_by_real.size() == 1) {
+			message(1,"attempting weight adjustment");
+			adjust_weights(true);
+
+			ph.update(_oe, _pe);
+			message(0, "control file parameter adjusted-weights phi report:");
+			ph.report(true);
+			ph.write(0, 1);
+		}
+
+
 
 		return;
 	}
@@ -7310,8 +7351,13 @@ bool EnsembleMethod::solve(bool use_mda, vector<double> inflation_factors, vecto
 	int best_idx = -1;
 	double best_mean = 1.0e+300, best_std = 1.0e+300; // todo (Ayman): read those from input
 	double mean, std;
-
 	message(0, "running upgrade ensembles");
+	ss.str("");
+	ss << inflation_factors.size() << " inflation factors (lambdas) times " << backtrack_factors.size() << " backtracking factors" << endl;
+	ss << "   times " << subset_idxs.size() << " realizations";
+	ss << " yields " << inflation_factors.size() * backtrack_factors.size() * subset_idxs.size() << " model runs for upgrade testing";
+	message(1,ss.str());
+
 	vector<ObservationEnsemble> oe_lams;
 	
 	//if we are saving upgrades to disk
@@ -8037,12 +8083,12 @@ void EnsembleMethod::message(int level, const string& _message)
 
 //template<typename T>
 
-void EnsembleMethod::message(int level, const string& _message, string extra)
+void EnsembleMethod::message(int level, const string& _message, string extra, bool echo)
 {
 	stringstream ss;
 	ss << _message << " " << extra;
 	string s = ss.str();
-	message(level, s);
+	message(level, s, vector<string>(),echo);
 }
 
 void EnsembleMethod::message(int level, const string& _message, int extra)
@@ -8160,12 +8206,12 @@ bool EnsembleMethod::initialize_pe(Covariance& cov)
 			}
 			catch (const exception& e)
 			{
-				ss << "error processing par jcb: " << e.what();
+				ss << "error processing par binary file: " << e.what();
 				throw_em_error(ss.str());
 			}
 			catch (...)
 			{
-				throw_em_error(string("error processing par jcb"));
+				throw_em_error(string("error processing par binary file"));
 			}
 		}
 		else

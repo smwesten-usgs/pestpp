@@ -2025,6 +2025,7 @@ def tenpar_adjust_weights_test():
     obs.loc[:,"standard_deviation"] = 0.1
     obs.loc[pst.obs_names[12:],"standard_deviation"] = 1e-11
     obs.loc[pst.obs_names[12:],"obsval"] = 1e-9
+    #these values are hard coded later...
     with open(os.path.join(template_d,"phi.csv"),'w') as f:
         f.write("og1,0.333333\n")
         f.write("og3,0.333333\n")
@@ -2043,6 +2044,29 @@ def tenpar_adjust_weights_test():
     
     pst.pestpp_options['ies_verbose_level'] = 4
     pst.pestpp_options["ies_bad_phi_sigma"] = -1.5
+
+    pst.control_data.noptmax = 0
+    pst.pestpp_options["ies_drop_conflicts"] = False
+    pst.pestpp_options["ies_phi_factor_file"] = "phi.csv"
+    pst_name = "pest_adj.pst"
+    pst.write(os.path.join(template_d,pst_name),version=2)
+    if os.path.exists(test_d):
+        shutil.rmtree(test_d)
+    shutil.copytree(template_d, test_d)
+    pyemu.os_utils.run("{0} {1}".format(exe_path, pst_name), cwd=test_d)
+    pst.set_res(os.path.join(test_d,pst_name.replace(".pst",".base.rei")))
+    print(pst.phi_components)
+    obs = pst.observation_data
+    aobs = pd.read_csv(os.path.join(test_d,pst_name.replace(".pst",".0.adjusted.obs_data.csv")),index_col=0)
+    obs.loc[aobs.index,"weight"] = aobs.weight.values
+    print(pst.phi_components)
+    print(pst.phi_components_normalized)
+    pcn = pst.phi_components_normalized
+    assert np.isclose(pcn["og3blahblah"],0.33333,1e-3)
+    assert np.isclose(pcn["og4yadayada"],0.33333,1e-3)
+    
+
+    pst.pestpp_options.pop("ies_phi_factor_file")
 
     
     pst.control_data.noptmax = 2
@@ -5007,10 +5031,48 @@ def large_invest():
     pyemu.os_utils.run("{0} pest.pst /e".format(exe_path),cwd=t_d)
 
 
+def tenpar_xsec_combined_autoadaloc_mm_stress_test():
+    """testing combined matrix + autoadaloc"""
+    model_d = "ies_10par_xsec"
+    test_d = os.path.join(model_d, "master_comb_aal_test1")
+    template_d = os.path.join(model_d, "test_template")
 
+    if not os.path.exists(template_d):
+        raise Exception("template_d {0} not found".format(template_d))
+    pst_name = os.path.join(template_d, "pest.pst")
+    pst = pyemu.Pst(pst_name)
 
+    if os.path.exists(test_d):
+        shutil.rmtree(test_d)
+    shutil.copytree(template_d, test_d)
+    pst.pestpp_options = {}
+    pst.pestpp_options["ies_num_reals"] = 30
+    
+    mat = pyemu.Matrix.from_names(pst.nnz_obs_names, pst.adj_par_names).to_dataframe()
+    mat.loc[:, :] = 1
+    mat.loc[:, pst.adj_par_names[::2]] = 0
+    pyemu.Matrix.from_dataframe(mat).to_ascii(os.path.join(template_d, "loc.mat"))
+
+    pst.pestpp_options["ies_localizer"] = "loc.mat"
+    pst.pestpp_options["ies_autoadaloc"] = True
+    pst.pestpp_options["ies_verbose_level"] = 3
+    pst.pestpp_options["ies_debug_fail_remainder"] = True
+    pst.pestpp_options["ies_debug_fail_subset"] = True
+    pst.pestpp_options["ies_debug_bad_phi"] = True
+    pst.pestpp_options["ies_multimodal_alpha"] = 0.99
+    
+    pst.control_data.noptmax = 3
+
+    pst.write(os.path.join(template_d, "pest_aal_restart.pst"))
+    pyemu.os_utils.start_workers(template_d, exe_path, "pest_aal_restart.pst", num_workers=10,
+                                 master_dir=test_d, verbose=True, worker_root=model_d,
+                                 port=port)
+    
 
 if __name__ == "__main__":
+    tenpar_xsec_combined_autoadaloc_mm_stress_test()
+
+    #tenpar_adjust_weights_test()
     #large_invest()
     #tenpar_fixed_transform_test()
     #tenpar_reg_factor_test()
@@ -5031,7 +5093,7 @@ if __name__ == "__main__":
     #tenpar_reg_factor_test()
     #tenpar_high_phi_test()
     #tenpar_iqr_bad_phi_sigma_test()
-    multimodal_test()
+    #multimodal_test()
     #plot_mm1_sweep_results()
     #plot_mm1_results()
     #plot_mm1_results_seq()

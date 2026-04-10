@@ -801,13 +801,13 @@ def tenpar_fosm_external_stdev_test():
 
 if __name__ == "__main__":
     #freyberg_stress_test()
-    tenpar_xsec_stress_test()
+    #tenpar_xsec_stress_test()
     #tenpar_base_test()
     #tenpar_fosm_external_stdev_test()
     #tenpar_superpar_restart_test()
     #freyberg_basic_restart_test()
     # jac_diff_invest()
-    #new_fmt_load_test()
+    new_fmt_load_test()
     #tenpar_hotstart_test()
     #tenpar_normalform_test()
     #freyberg_stress_test()
