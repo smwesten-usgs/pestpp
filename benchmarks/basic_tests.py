@@ -913,6 +913,117 @@ def tplins1_test():
 
 
 
+def tpl_max_sig_figs_test():
+    """Test that ++tpl_max_sig_figs limits significant figures in template output,
+    including the extreme case: a descriptive 38-character parameter name that
+    creates a 42-char-wide template field.
+
+    This tests the real motivating use case. Long, human-readable parameter names
+    (e.g. 'evapotranspiration_rate_clay_layer_01') are good practice -- they are
+    self-documenting and trivial to filter/select in pyemu or pandas. Without
+    tpl_max_sig_figs, such names cause PEST++ to fill the wide template field
+    with 30+ meaningless digits. With the option, you get a clean, readable number.
+    """
+    model_d = "tplins_test_1"
+    t_d = os.path.join(model_d, "test_sig_figs")
+    if os.path.exists(t_d):
+        shutil.rmtree(t_d)
+    os.makedirs(t_d)
+
+    # Copy the forward_run script
+    shutil.copy2(os.path.join(model_d, "template", "forward_run.py"), t_d)
+    shutil.copy2(os.path.join(model_d, "template", "out1_copy.dat"), t_d)
+    shutil.copy2(os.path.join(model_d, "template", "AOC_obs_copy.txt"), t_d)
+
+    # Create a template file with a wide field from a long, descriptive parameter name
+    long_par_name = "evapotranspiration_rate_clay_layer_01"  # 38 chars
+    wide_field = "~ {0} ~".format(long_par_name)  # 42 chars total
+    tpl_file = os.path.join(t_d, "params.tpl")
+    in_file = os.path.join(t_d, "params.dat")
+    with open(tpl_file, 'w') as f:
+        f.write("ptf ~\n")
+        f.write("{0}\n".format(wide_field))
+
+    # Create a dummy instruction file and output (we only care about template writing)
+    ins_file = os.path.join(t_d, "out.ins")
+    out_file = os.path.join(t_d, "out.dat")
+    with open(ins_file, 'w') as f:
+        f.write("pif @\n")
+        f.write("l1 !dummy_obs!\n")
+    with open(out_file, 'w') as f:
+        f.write("1.0\n")
+
+    # Write a trivial forward model that just produces the expected output file
+    with open(os.path.join(t_d, "run_model.py"), 'w') as f:
+        f.write("with open('out.dat','w') as f: f.write('1.0\\n')\n")
+
+    # Build a minimal PST using pyemu
+    pst = pyemu.Pst.from_io_files(tpl_file, in_file, ins_file, out_file, pst_path=".")
+    par = pst.parameter_data
+    par.loc[long_par_name, "parval1"] = 3.141592653589793  # pi
+    par.loc[long_par_name, "parlbnd"] = 0.001
+    par.loc[long_par_name, "parubnd"] = 1000.0
+    par.loc[long_par_name, "partrans"] = "none"
+    pst.model_command = ["python run_model.py"]
+
+    # --- Test 1: WITH tpl_max_sig_figs = 6 ---
+    pst.control_data.noptmax = 0
+    pst.pestpp_options["tpl_max_sig_figs"] = 6
+    pst.write(os.path.join(t_d, "pest_sigfig.pst"))
+    pyemu.os_utils.run("{0} pest_sigfig.pst".format(exe_path.replace("-ies", "-glm")), cwd=t_d)
+
+    with open(os.path.join(t_d, "params.dat"), 'r') as f:
+        line_capped = f.readline().strip()
+    print("With tpl_max_sig_figs=6, 42-char field: '{}'".format(line_capped))
+
+    sig_figs_capped = _count_sig_figs(line_capped)
+    assert sig_figs_capped <= 6, \
+        "With tpl_max_sig_figs=6, value '{}' has {} sig figs, expected <= 6".format(
+            line_capped, sig_figs_capped)
+
+    # --- Test 2: WITHOUT tpl_max_sig_figs (unlimited) ---
+    pst.pestpp_options.pop("tpl_max_sig_figs", None)
+    pst.write(os.path.join(t_d, "pest_unlimited.pst"))
+    pyemu.os_utils.run("{0} pest_unlimited.pst".format(exe_path.replace("-ies", "-glm")), cwd=t_d)
+
+    with open(os.path.join(t_d, "params.dat"), 'r') as f:
+        line_unlimited = f.readline().strip()
+    print("Without tpl_max_sig_figs, 42-char field: '{}'".format(line_unlimited))
+
+    sig_figs_unlimited = _count_sig_figs(line_unlimited)
+    # Without the cap, a 42-char field for pi should use ~38-39 sig figs
+    assert sig_figs_unlimited > 15, \
+        "Expected unlimited 42-char field to have >15 sig figs, got {} in '{}'".format(
+            sig_figs_unlimited, line_unlimited)
+
+    # --- Test 3: Verify the option echoes in .rec file ---
+    with open(os.path.join(t_d, "pest_sigfig.rec"), 'r') as f:
+        rec_content = f.read()
+    assert "tpl_max_sig_figs: 6" in rec_content, \
+        "Expected 'tpl_max_sig_figs: 6' in .rec file"
+
+    print("tpl_max_sig_figs_test PASSED")
+    print("  - Sig figs with cap=6: {}  value: '{}'".format(sig_figs_capped, line_capped))
+    print("  - Sig figs unlimited:  {}  value: '{}'".format(sig_figs_unlimited, line_unlimited))
+
+
+def _count_sig_figs(token):
+    """Count significant figures in a numeric string token."""
+    s = token.strip()
+    # Remove sign
+    if s.startswith('-') or s.startswith('+'):
+        s = s[1:]
+    # Handle scientific notation: only count mantissa digits
+    if 'e' in s.lower():
+        s = s.split('e')[0].split('E')[0]
+    # Remove decimal point
+    s = s.replace('.', '')
+    # Remove leading zeros (not significant)
+    s = s.lstrip('0')
+    # What remains is the significant digits
+    return len(s) if len(s) > 0 else 1
+
+
 def ext_stdcol_test():
     model_d = "ies_10par_xsec"
     
