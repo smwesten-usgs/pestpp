@@ -268,7 +268,8 @@ int main(int argc, char* argv[])
 				pest_scenario.get_pestpp_options().get_fill_tpl_zeros(),
 				pest_scenario.get_pestpp_options().get_additional_ins_delimiters(),
 				pest_scenario.get_pestpp_options().get_num_tpl_ins_threads(),
-				pest_scenario.get_pestpp_options().get_tpl_force_decimal());
+				pest_scenario.get_pestpp_options().get_tpl_force_decimal(),
+				pest_scenario.get_pestpp_options().get_tpl_max_sig_figs());
 		}
 
 		//setup the parcov, if needed

@@ -31,7 +31,7 @@ public:
 		const std::vector<std::string> _insfile_vec, const std::vector<std::string> _outfile_vec,
 		const std::string &stor_filename, const std::string &run_dir, int _max_run_fail=1,
 		bool fill_tpl_zeros=false, string additional_ins_delimiters="", int _num_threads=1,
-		bool tpl_force_decimal=false, bool should_echo=true);
+		bool tpl_force_decimal=false, int tpl_max_sig_figs=-1, bool should_echo=true);
 	virtual void run();
 	~RunManagerSerial(void);
 private:

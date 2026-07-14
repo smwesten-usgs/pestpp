@@ -45,7 +45,7 @@ RunManagerSerial::RunManagerSerial(const vector<string> _comline_vec,
 	const vector<string> _insfile_vec, const vector<string> _outfile_vec,
 	const string &stor_filename, const string &_run_dir, int _max_run_fail,
 	bool fill_tpl_zeros, string additional_ins_delimiters, int _num_threads,
-	bool tpl_force_decimal, bool should_echo)
+	bool tpl_force_decimal, int tpl_max_sig_figs, bool should_echo)
 	: RunManagerAbstract(_comline_vec, _tplfile_vec, _inpfile_vec,
 	_insfile_vec, _outfile_vec, stor_filename, _max_run_fail),
 	run_dir(_run_dir), mi(_tplfile_vec,_inpfile_vec,_insfile_vec,_outfile_vec, _comline_vec)
@@ -54,6 +54,7 @@ RunManagerSerial::RunManagerSerial(const vector<string> _comline_vec,
 	mi.set_fill_tpl_zeros(fill_tpl_zeros);
 	mi.set_num_threads(_num_threads);
 	mi.set_tpl_force_decimal(tpl_force_decimal);
+	mi.set_tpl_max_sig_figs(tpl_max_sig_figs);
     mi.set_sleep_ms(5);
     mi.set_should_echo(should_echo);
 	cout << "              starting serial run manager ..." << endl << endl;

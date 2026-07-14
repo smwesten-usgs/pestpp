@@ -498,7 +498,8 @@ int main(int argc, char* argv[])
 				pest_scenario.get_pestpp_options().get_fill_tpl_zeros(),
 				pest_scenario.get_pestpp_options().get_additional_ins_delimiters(),
 				pest_scenario.get_pestpp_options().get_num_tpl_ins_threads(),
-				pest_scenario.get_pestpp_options().get_tpl_force_decimal());
+				pest_scenario.get_pestpp_options().get_tpl_force_decimal(),
+				pest_scenario.get_pestpp_options().get_tpl_max_sig_figs());
 			run_manager_ptr->initialize(pest_scenario.get_ctl_parameters(), pest_scenario.get_ctl_observations());
 		}
 		
@@ -595,7 +596,8 @@ int main(int argc, char* argv[])
 					childPest.get_pestpp_options().get_fill_tpl_zeros(),
 					childPest.get_pestpp_options().get_additional_ins_delimiters(),
 					pest_scenario.get_pestpp_options().get_num_tpl_ins_threads(),
-					pest_scenario.get_pestpp_options().get_tpl_force_decimal());
+					pest_scenario.get_pestpp_options().get_tpl_force_decimal(),
+					pest_scenario.get_pestpp_options().get_tpl_max_sig_figs());
 			}
 
 			ParamTransformSeq& base_trans_seq = childPest.get_base_par_tran_seq_4_mod();
