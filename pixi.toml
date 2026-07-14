@@ -12,6 +12,9 @@ ninja = "*"
 flopy = "*"
 pyemu = "*"
 
+[target.win-64.activation]
+scripts = ["scripts/activate_msvc.bat"]
+
 [tasks]
 # install
 install-modflow = "get-modflow --repo executables $CONDA_PREFIX/bin"
