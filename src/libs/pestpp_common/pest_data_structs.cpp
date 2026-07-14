@@ -1413,6 +1413,11 @@ bool PestppOptions::assign_value_by_key_continued(const string& key, const strin
         tpl_force_decimal = pest_utils::parse_string_arg_to_bool(value);
         return true;
     }
+	else if (key == "TPL_MAX_SIG_FIGS")
+	{
+		convert_ip(value, tpl_max_sig_figs);
+		return true;
+	}
 	else if (key == "FORGIVE_UNKNOWN_ARGS")
 	{
 		forgive_unknown_args = pest_utils::parse_string_arg_to_bool(value);
@@ -1960,6 +1965,7 @@ void PestppOptions::summary(ostream& os) const
 	os << "check_tplins: " << check_tplins << endl;
 	os << "fill_tpl_zeros: " << fill_tpl_zeros << endl;
 	os << "tpl_force_decimal: " << tpl_force_decimal << endl;
+	os << "tpl_max_sig_figs: " << tpl_max_sig_figs << endl;
 	os << "additional_ins_delimiters: " << additional_ins_delimiters << endl;
 	os << "random_seed: " << random_seed << endl;
 	os << "num_tpl_ins_threads: " << num_tpl_ins_threads << endl;
@@ -2532,6 +2538,7 @@ void PestppOptions::set_defaults()
 	set_check_tplins(true);
 	set_fill_tpl_zeros(false);
     set_tpl_force_decimal(false);
+	set_tpl_max_sig_figs(-1);
 	set_additional_ins_delimiters("");
 	set_num_tpl_ins_threads(1);	
 

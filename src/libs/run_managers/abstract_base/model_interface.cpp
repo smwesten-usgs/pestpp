@@ -11,6 +11,7 @@
 #include <fstream>
 #include <vector>
 #include <cstring>
+#include <cmath>
 #include <sstream>
 #include <thread>
 #include <unordered_set>
@@ -52,7 +53,7 @@ ModelInterface::ModelInterface(vector<string> _tplfile_vec, vector<string> _inpf
                                _insfile_vec, vector<string> _outfile_vec, vector<string> _comline_vec):
                                insfile_vec(_insfile_vec), outfile_vec(_outfile_vec), tplfile_vec(_tplfile_vec),
                                inpfile_vec(_inpfile_vec), comline_vec(_comline_vec), fill_tpl_zeros(false),
-                               additional_ins_delimiters(""),num_threads(1),tpl_force_decimal(false)
+                               additional_ins_delimiters(""),num_threads(1),tpl_force_decimal(false),tpl_max_sig_figs(-1)
 {
     //scrub any os seps from the file names
 
@@ -342,6 +343,7 @@ void ThreadedTemplateProcess::work(int tid, vector<int>& tpl_idx, Parameters par
 		TemplateFile tpl(tplfile_vec[i]);
 		tpl.set_fill_zeros(fill);
 		tpl.set_force_decimal(force_decimal);
+		tpl.set_max_sig_figs(max_sig_figs);
 		Parameters ppars = tpl.write_input_file(inpfile_vec[i], pars);
 		while (true)
 		{
@@ -432,7 +434,7 @@ void ModelInterface::write_input_files(Parameters *pars_ptr)
 	vector<thread> threads;
 	vector<exception_ptr> exception_ptrs;
 	Parameters pro_pars = *pars_ptr; //copy
-	ThreadedTemplateProcess ttp(tplfile_vec, inpfile_vec, fill_tpl_zeros, tpl_force_decimal);
+	ThreadedTemplateProcess ttp(tplfile_vec, inpfile_vec, fill_tpl_zeros, tpl_force_decimal, tpl_max_sig_figs);
 
 	for (int i = 0; i < nnum_threads; i++)
 	{
@@ -1201,6 +1203,34 @@ string TemplateFile::cast_to_fixed_len_string(int size, double value, string& na
 	}
 	ss.width(size);
 	
+	// Cap precision at user-specified max significant figures
+	if (max_sig_figs > 0)
+	{
+		int max_prec;
+		if (sci)
+		{
+			// In scientific notation, setprecision(n) gives n digits after decimal
+			// Total sig figs = n + 1 (for the leading digit)
+			max_prec = max_sig_figs - 1;
+		}
+		else
+		{
+			// In fixed notation, setprecision(n) gives n digits after decimal
+			// Sig figs = integer_digits + decimal_digits
+			// integer_digits = max(1, floor(log10(abs(value))) + 1) for value != 0
+			int int_digits = 1;
+			if (value != 0.0)
+			{
+				int_digits = (int)floor(log10(abs(value))) + 1;
+				if (int_digits < 1) int_digits = 0; // for values like 0.001
+			}
+			max_prec = max_sig_figs - int_digits;
+		}
+		if (max_prec < 0) max_prec = 0;
+		if (precision > max_prec)
+			precision = max_prec;
+	}
+
 	int size_last = -1;
 	if (fill_zeros)
 	{

@@ -15,12 +15,13 @@ class TemplateFile {
 public:
 	static vector<int> find_all_marker_indices(const string& line, const string& marker);
 	TemplateFile(string _tpl_filename, bool _fill_zeros=false, bool _force_decimal=false): tpl_filename(_tpl_filename),line_num(0),
-	fill_zeros(_fill_zeros),force_decimal(_force_decimal){ ; }
+	fill_zeros(_fill_zeros),force_decimal(_force_decimal),max_sig_figs(-1){ ; }
 	unordered_set<string> parse_and_check();
 	Parameters write_input_file(const string& input_filename, Parameters& pars);
 	void throw_tpl_error(const string& message, int lnum=0, bool warn=false);
 	void set_fill_zeros(bool _flag) { fill_zeros = _flag; }
 	void set_force_decimal(bool _flag) {force_decimal = _flag;}
+	void set_max_sig_figs(int _val) { max_sig_figs = _val; }
 	string get_tpl_filename() { return tpl_filename; }
 private:
 	int line_num;
@@ -33,19 +34,21 @@ private:
 	unordered_set<string> get_names(ifstream& f);
 	bool fill_zeros;
 	bool force_decimal;
+	int max_sig_figs;
 	
 };
 
 class ThreadedTemplateProcess {
 public:
-	ThreadedTemplateProcess(vector<string> _tplfile_vec, vector<string> _inpfile_vec, bool _fill, bool _force_decimal) :
-		tplfile_vec(_tplfile_vec), inpfile_vec(_inpfile_vec), fill(_fill), force_decimal(_force_decimal) {;};
+	ThreadedTemplateProcess(vector<string> _tplfile_vec, vector<string> _inpfile_vec, bool _fill, bool _force_decimal, int _max_sig_figs) :
+		tplfile_vec(_tplfile_vec), inpfile_vec(_inpfile_vec), fill(_fill), force_decimal(_force_decimal), max_sig_figs(_max_sig_figs) {;};
 	void work(int tid, vector<int>& tpl_idx, Parameters pars, Parameters& pro_pars);
 private:
 	vector<string> tplfile_vec;
 	vector<string> inpfile_vec;
 	bool fill;
 	bool force_decimal;
+	int max_sig_figs;
 	mutex par_lock, idx_lock;
 };
 
@@ -111,6 +114,7 @@ public:
 	void set_additional_ins_delimiters(string delims) { additional_ins_delimiters = delims; }
 	void set_fill_tpl_zeros(bool _flag) { fill_tpl_zeros = _flag; }
 	void set_tpl_force_decimal(bool _flag) {tpl_force_decimal = _flag;}
+	void set_tpl_max_sig_figs(int _val) { tpl_max_sig_figs = _val; }
 	void set_num_threads(int _num_threads) { num_threads = _num_threads; }
 	void set_sleep_ms(int _sleep_ms){sleep_ms = _sleep_ms;}
     void set_should_echo(bool _should_echo){should_echo=_should_echo;}
@@ -128,6 +132,7 @@ private:
 	vector<string> comline_vec; 
 	bool fill_tpl_zeros;
 	bool tpl_force_decimal;
+	int tpl_max_sig_figs;
 	string additional_ins_delimiters;
     bool should_echo;
 
