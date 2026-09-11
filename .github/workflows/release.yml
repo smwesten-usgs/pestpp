@@ -1,67 +1,254 @@
 name: Release Pest++
+
+# Choose the branch on the Actions page: the "Run workflow" dropdown sets the ref and
+# actions/checkout defaults to it. There is deliberately no `branch` input - it would be a
+# second selector free to disagree with the dropdown.
+#
+# The version is not an input either. It is read from src/libs/common/config_os.h, the single
+# place it is defined and the same line cmake/cpack parse. An input would be a second source of
+# truth, and the way that fails is tagging 5.2.29 while shipping an archive named 5.2.28.
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch to release from.'
-        required: true
-        type: string
-      version:
-        description: 'Release version number.'
-        required: true
-        type: string
-env:
-  PIXI_BETA_WARNING_OFF: true
+      draft:
+        description: 'Create as a draft (not public, and the TAG is not created until you publish)'
+        required: false
+        type: boolean
+        default: true
+      prerelease:
+        description: 'Mark prerelease? auto = yes when the version carries a suffix (5.2.29rc1)'
+        required: false
+        type: choice
+        default: 'auto'
+        options: ['auto', 'yes', 'no']
+
+permissions:
+  contents: write        # create the release and upload assets
+
 jobs:
   build:
     name: Build ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    # Linux builds INSIDE manylinux, not on the runner. A binary compiled against the runner's
+    # glibc only runs on that glibc or newer, which quietly excludes rhel/rocky 8, debian 11 and
+    # ubuntu 20.04 - a lot of institutional and hpc machines. The image sets the floor at glibc
+    # 2.28, and CMakeLists.txt statically links libstdc++/libgcc on linux so the c++ runtime
+    # stops being a second, separate version dependency.
+    #
+    # container is '' for mac and windows, which github treats as "no container".
+    container: ${{ matrix.container }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-14, windows-2022]
+        include:
+          - { os: ubuntu-22.04, container: 'quay.io/pypa/manylinux_2_28_x86_64' }
+          - { os: macos-14,     container: '' }
+          - { os: windows-2022, container: '' }
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     defaults:
       run:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v6
-        with:
-          repository: usgs/pestpp
-          ref: ${{ inputs.branch }}
-
-      - uses: prefix-dev/setup-pixi@v0.9.3
-        with:
-          pixi-version: v0.41.4
 
       - name: Setup windows compiler
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Set ostag
-        id: ostag
+      # The manylinux image ships several pythons, none of them on PATH, and no system cmake.
+      # Written to GITHUB_PATH so every later step in this job sees them.
+      - name: Setup manylinux toolchain
+        if: matrix.container != ''
         run: |
-          if [[ $RUNNER_OS == "Linux" ]]; then
-            ostag="linux"
-          elif [[ $RUNNER_OS == "macOS" ]]; then
-            ostag="mac"
-          elif [[ $RUNNER_OS == "Windows" ]]; then
-            ostag="win"
+          /opt/python/cp312-cp312/bin/pip install --quiet cmake ninja
+          echo "/opt/python/cp312-cp312/bin" >> $GITHUB_PATH
+
+      - name: Read version and ostag
+        id: version
+        run: |
+          # the same line cmake parses, and the same ostag CPACK_SYSTEM_NAME uses
+          version=$(grep -oE '#define PESTPP_VERSION "[^"]+"' src/libs/common/config_os.h \
+                    | grep -oE '"[^"]+"' | tr -d '"')
+          if [[ -z "$version" ]]; then
+            echo "::error::could not read PESTPP_VERSION from src/libs/common/config_os.h"
+            exit 1
           fi
+          if [[ $RUNNER_OS == "Linux" ]]; then ostag="linux"
+          elif [[ $RUNNER_OS == "macOS" ]]; then ostag="mac"
+          else ostag="win"; fi
+          echo "version=$version" >> $GITHUB_OUTPUT
           echo "ostag=$ostag" >> $GITHUB_OUTPUT
+          echo "building pestpp $version for $ostag"
 
-      - name: Build binaries
+      # Same invocation as ci.yml, so a release build is the build CI already exercises
+      - name: Build
         run: |
-          pixi run configure
-          pixi run build-release
+          mkdir build && cd build
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+              cmake -GNinja -DCMAKE_CXX_COMPILER=cl -DCMAKE_C_COMPILER=cl -DCMAKE_BUILD_TYPE=Release ..
+              ninja
+          else
+              cmake -DCMAKE_BUILD_TYPE=Release ..
+              make -j2
+          fi
 
-      - name: Make distribution
+      # Cheap gate: about a second, and it will not publish a build whose option registry, run
+      # storage or instruction handling is broken. Run from the BUILD tree, not bin/ - bin/ is
+      # populated by a glob that can serve a stale binary.
+      #
+      # SKIPPED, not failed, where the binary does not exist. pestpp-selftest is not present on
+      # every branch - it was added on a feature branch and the default branch predates it - and
+      # a release workflow that refuses to run on the default branch is a worse outcome than one
+      # that occasionally packages without the gate. The notice makes the skip visible in the
+      # run summary rather than silent; once every branch carries the selftest this always runs.
+      - name: Self-test
         run: |
-          path=pestpp-${{ inputs.version }}-${{ steps.ostag.outputs.ostag }}
-          cp -r bin $path
-          rm -r $path/*/ || true
+          bin=$(find build -type f \( -name 'pestpp-selftest' -o -name 'pestpp-selftest.exe' \) | head -1)
+          if [[ -z "$bin" ]]; then
+            echo "::notice::no pestpp-selftest in this tree - skipping the self-test gate"
+          else
+            "$bin"
+          fi
+
+      # cpack, unchanged from what scripts/build_pestpp_*.sh already do: TGZ on posix, ZIP on
+      # windows. The archive name comes from CPACK_PACKAGE_FILE_NAME - pestpp-<version>-<ostag>
+      # - so a release candidate names itself.
+      - name: Package
+        run: |
+          cd build
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+              cpack -G ZIP
+          else
+              cpack -G TGZ
+          fi
+          ls -l pestpp-*.tar.gz pestpp-*.zip 2>/dev/null || true
+
+      # Diagnostic binaries come from the developer-environment workflow, which builds them
+      # for every commit. They are downloaded from that run rather than rebuilt here, so the
+      # release ships exactly the artifacts CI already produced and tested for this sha.
+      #
+      # This makes a release DEPEND on a successful developer-environment run for the same
+      # commit. Dispatching a release on a sha whose ci run was cancelled, skipped, or has aged
+      # out of artifact retention will fail here - deliberately and with a clear message, rather
+      # than quietly publishing without the diagnostic set.
+      - name: Find the developer-environment run for this commit
+        id: devenv
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id=$(gh run list --workflow ci-devenv.yml --commit "${{ github.sha }}" \
+                     --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          if [[ -z "$run_id" || "$run_id" == "null" ]]; then
+            echo "::error::no successful developer-environment run for ${{ github.sha }} -"
+            echo "::error::the diagnostic binaries are built there. re-run that workflow first."
+            exit 1
+          fi
+          echo "using developer-environment run $run_id"
+          echo "run_id=$run_id" >> $GITHUB_OUTPUT
+
+      - name: Download diagnostic binaries
+        uses: actions/download-artifact@v6
+        with:
+          name: diagnostic-${{ matrix.os }}
+          path: build-debug
+          run-id: ${{ steps.devenv.outputs.run_id }}
+          github-token: ${{ github.token }}
+
+      # One flat archive, not the loose .pdb tree. The publish job downloads every artifact with
+      # merge-multiple into dist/ and runs `gh release create ... dist/*`, so anything arriving
+      # as a nested directory would be handed to gh as a directory and not as an asset.
+      - name: Package debug symbols
+        if: runner.os == 'Windows'
+        run: |
+          mkdir -p symbols
+          find build -name '*.pdb' -exec cp {} symbols/ \;
+          ls -l symbols
+          cd symbols
+          cmake -E tar cf "../build/pestpp-${{ steps.version.outputs.version }}-win-symbols.zip" \
+            --format=zip .
 
       - name: Upload distribution
         uses: actions/upload-artifact@v6
         with:
-          name: pestpp-${{ inputs.version }}-${{ steps.ostag.outputs.ostag }}
-          path: pestpp-${{ inputs.version }}-${{ steps.ostag.outputs.ostag }}
+          name: pestpp-${{ steps.version.outputs.version }}-${{ steps.version.outputs.ostag }}
+          path: |
+            build/pestpp-*.tar.gz
+            build/pestpp-*.zip
+            build-debug/pestpp-*-debug.tar.gz
+            build-debug/pestpp-*-debug.zip
+          if-no-files-found: error
+
+      # Symbols go out twice on purpose.
+      #
+      # A windows crash dump names a module and an address; the pdb is what turns that into a
+      # file and a line, and it only ever matches the one build that produced it - it cannot be
+      # regenerated later for a binary someone already downloaded.
+      #
+      # This artifact is the convenient copy for a build that is never released. The same zip
+      # also rides into dist/ below and is attached to the release itself, which is the copy
+      # that has to last: github artifacts expire on the repo retention setting, release assets
+      # do not.
+      - name: Upload debug symbols
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v6
+        with:
+          name: pestpp-${{ steps.version.outputs.version }}-win-symbols
+          path: build/pestpp-*-win-symbols.zip
+          if-no-files-found: error
+
+  publish:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download all distributions
+        uses: actions/download-artifact@v6
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Show what will be published
+        run: ls -l dist
+
+      # Tags here are bare version numbers (5.2.26, not v5.2.26), so keep that.
+      # Draft by default: this publishes to a public repo and notifies watchers, and a dispatch
+      # has no undo.
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${{ needs.build.outputs.version }}"
+          if gh release view "$version" >/dev/null 2>&1; then
+            echo "::error::release $version already exists - bump PESTPP_VERSION in src/libs/common/config_os.h"
+            exit 1
+          fi
+          # Draft and prerelease are independent, not a three-way choice: a draft can also be
+          # marked prerelease, and it carries that through to publication.
+          #
+          # A DRAFT HAS NO TAG. GitHub creates the tag only when the release is published, and
+          # the automatic "Source code (zip/tar.gz)" assets are generated FROM the tag - so a
+          # draft shows only the archives uploaded here, and is not a faithful preview.
+          draft=""
+          if [[ "${{ inputs.draft }}" == "true" ]]; then draft="--draft"; fi
+
+          # auto: a version carrying a suffix is a release candidate, so it must not be served
+          # as "latest". Explicit yes/no is there for the cases the pattern cannot know about -
+          # a numbered version that is still not ready, or an rc you deliberately want promoted.
+          prerelease=""
+          case "${{ inputs.prerelease }}" in
+            yes) prerelease="--prerelease" ;;
+            no)  prerelease="" ;;
+            *)   if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                   prerelease="--prerelease"
+                 fi ;;
+          esac
+          echo "version=$version draft=${draft:-no} prerelease=${prerelease:-no}"
+          gh release create "$version" \
+            --target "${{ github.sha }}" \
+            --title "PEST++ $version" \
+            --generate-notes \
+            $draft $prerelease \
+            dist/*
